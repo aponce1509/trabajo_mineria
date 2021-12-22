@@ -10,9 +10,11 @@ import seaborn as sns
 import numpy as np
 from sklearn.feature_selection import chi2
 import missingno as msno
+from scipy.stats import chi2_contingency
 # %%
 df = pd.read_csv("../data/training_set_features.csv", dtype='category')
 labels = pd.read_csv("../data/training_set_labels.csv", dtype='category')
+df = pd.concat([df, labels], axis=1)
 df.head()
 # %%
 df.describe()
@@ -23,6 +25,8 @@ df.shape
 na_count_by_row = df.isna().T.sum()
 na_count_by_row.max()
 na_count_by_row[na_count_by_row >= 10]
+# %%
+msno.heatmap(df)
 # %% EDA funcional
 class OneVariable:
     def __init__(self, column_num, ordered_=False) -> None:
@@ -45,7 +49,7 @@ class OneVariable:
         plt.xticks(rotation=rotation_)    
 
 # %% 
-var1 = OneVariable(1, True)
+var1 = OneVariable(-2, True)
 print(var1)
 
 # %% 
@@ -54,20 +58,37 @@ for i in range(1, len(df.columns.values)):
     temp = OneVariable(i, True)
     print(temp)
     var.append(temp)
-
+# %%
+df = df.drop("respondent_id", axis=1)
+# %%
+df_sinna = df.dropna()
+# %%
+aux = df_sinna.apply(lambda x: pd.factorize(x, sort=True)[0], axis=1)
+df_sinna = pd.DataFrame(
+    np.array([i for i in aux]),
+    columns=df_sinna.columns.values
+)
 
 # %%
 resultant = pd.DataFrame(
-    data=[(0 for i in range(len(df.columns))) for i in range(len(df.columns))],
-    columns=list(df.columns)
+    data=[(0 for i in range(len(df_sinna.columns))) 
+             for i in range(len(df_sinna.columns))],
+    columns=list(df_sinna.columns)
 )
-resultant.set_index(pd.Index(list(df.columns)), inplace = True)
-for i in list(df.columns):
-    for j in list(df.columns):
+resultant.set_index(pd.Index(list(df_sinna.columns)), inplace = True)
+for i in list(df_sinna.columns):
+    for j in list(df_sinna.columns):
         if i != j:
-            chi2_val, p_val = chi2(np.array(df[i]).reshape(-1, 1), np.array(df[j]).reshape(-1, 1))
+            chi2_val, p_val = chi2(
+                np.array(df_sinna[i]).reshape(-1, 1),
+                np.array(df_sinna[j]).reshape(-1, 1)
+            )
             resultant.loc[i,j] = p_val
 print(resultant)
+plt.subplots(figsize=(20,15))
+sns.heatmap(resultant, vmin=0, vmax=0.15, cmap="coolwarm")
+# %%
+
 
 # %%
 
