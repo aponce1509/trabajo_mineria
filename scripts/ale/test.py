@@ -12,8 +12,8 @@ from sklearn.feature_selection import chi2
 import missingno as msno
 from scipy.stats import chi2_contingency
 # %%
-df = pd.read_csv("../data/training_set_features.csv", dtype='category')
-labels = pd.read_csv("../data/training_set_labels.csv", dtype='category')
+df = pd.read_csv("../../data/training_set_features.csv", dtype='category')
+labels = pd.read_csv("../../data/training_set_labels.csv", dtype='category')
 df = pd.concat([df, labels], axis=1)
 df.head()
 # %%
@@ -87,9 +87,6 @@ for i in list(df_sinna.columns):
 print(resultant)
 plt.subplots(figsize=(20,15))
 sns.heatmap(resultant, vmin=0, vmax=0.15, cmap="coolwarm")
-# %%
-
-
 # %%
 
 from sklearn.datasets import load_iris
