@@ -1,1 +1,0 @@
-# ANOMALÍAS Y RUIDO
