@@ -17,14 +17,16 @@ if __name__ == "__main__":
     x_train_aux = cat_to_numbers_all(x_train)
     imputer = missingpy.MissForest(
         n_estimators=10,
-        criterion="squared_error",
+        # criterion="gini",
         random_state=123
     )
-    x_train_imputed = imputer.fit_transform(x_train_aux)
-    # De momento no se si puede trabajar con categóricos, lo que hago es redondear
-    # los números que salen
+    x_train_imputed = imputer.fit_transform(
+        x_train_aux,
+        cat_vars=[i for i in range(0, x_train_aux.shape[1])]
+    )
     x_train_imputed = pd.DataFrame(
-        np.round(x_train_imputed),
+        x_train_imputed,
+        # np.round(x_train_imputed),
         columns=x_train.columns.values
     )
     x_train_imputed.to_csv("data/x_train_imputed_rf.csv")
