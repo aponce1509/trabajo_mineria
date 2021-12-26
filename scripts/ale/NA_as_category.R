@@ -12,4 +12,4 @@ y_train <- y_train[, -1]
 
 x_train_na <- x_train[, -1]
 x_train_na[is.na(x_train[, -1])] <- "NA"
-x_train_na <- apply(x_train_na, 2, as.factor) %>% as.data.frame()
+x_train_na <- lapply(x_train_na, factor) %>% as.data.frame()
