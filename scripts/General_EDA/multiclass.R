@@ -1,4 +1,5 @@
 library(tidyverse)
+library(fastDummies)
 
 # Función para extraer las multiclases
 # 1 --> (1,1)
@@ -30,4 +31,10 @@ training_set_labels_4 =  as.data.frame((classes %>% rowwise() %>%
 
 # Exportamos las etiquetas
 write_csv(training_set_labels_4,'training_set_labels_4.csv')
+
+# Obtenemos también las etiquetas de las 4 clases para clasificación binaria
+training_set_labels_4_bin = (dummy_cols(training_set_labels_4))[,2:5]
+
+# Exportamos
+write_csv(training_set_labels_4_bin,'training_set_labels_4_bin.csv')
 
