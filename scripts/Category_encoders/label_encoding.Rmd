@@ -91,3 +91,85 @@ Las de orden char se pueden pasar a numéricas con orden pero cuidado con la dis
 Las de sin orden char... hay que buscarse la vida. 
 Quizá se pueden hacer dummy o one hot las de race, employment, census
 Las que tienen bastantes variables, se puede hacer binary, hash o target/LOO (bayesiana)
+
+#Implemetación:
+
+```{r}
+df_encoded = df
+###
+# Cambio de binarias char a binarias numericas
+###
+
+  #Metodo 1: Pasar a 0, 1
+  df_encoded$sex = factor(df$sex, labels=c(0,1)) #Female 0,  #Male 1
+  df_encoded$marital_status = factor(df$marital_status, labels=c(0,1)) #Not Married 0, #Married 1
+  df_encoded$rent_or_own = factor(df$rent_or_own, labels=c(0,1)) #Own 0, #Rent 1
+  
+  #Metodo 2: Pasar a dummies (para metodos con distancias)
+  library(dummies)
+  df_encoded_dummies = df[,-c(25,27,28)] #quito sex, marital status, rent or own
+  df_encoded_dummies = cbind( df_encoded_dummies, data.frame(dummy(df$sex)),
+                                                  data.frame(dummy(df$marital_status)),
+                                                  data.frame(dummy(df$rent_or_own)) ) #añado las columnas dummies nuevas
+  #Por defecto, NA se asigna a una categoría más. Se puede quitar con el comando [,-3], y entonces el NA saldría como un 0, 0 
+
+  
+###
+# Cambio de orden char a orden numericas
+###
+  
+  #Metodo 1: se pasa a factor ordenado
+  df_encoded$education = factor(df$education, levels=c("< 12 Years", "12 Years", "Some College", "College Graduate"), labels=c(1:4), ordered=TRUE)
+  df_encoded$age_group = factor(df$age_group, levels=c("18 - 34 Years","35 - 44 Years","45 - 54 Years","55 - 64 Years","65+ Years"), labels=c(1:5), ordered=TRUE)
+  df_encoded$income_poverty = factor(df$income_poverty, levels=c("Below Poverty","<= $75,000, Above Poverty","> $75,000" ), labels=c(1:3), ordered=TRUE)
+  
+      #Cuidado, las distancias no son representativas!! No vale para cosas con distancia
+  
+  #Metodo 2: se puede hacer los dummies igual que antes...
+
+  
+###
+# Char sin orden. Cada una se debe hacer de una forma. Para hacer métodos sin distancias, pasaría todo a label encoding (Poner números sin significado)
+# Para hacer métodos con distancia, haría dummies con las de menos variables, y hash/binary o target con las de más variables.
+# Son las variables 24,29,30,31,34,35
+###
+  
+  #Método 1: se pasa todo a label encoding (Para métodos sin distancias)
+  label_encoding = function(x){factor(x, labels=c(1:length(unique(na.omit(x)))))}
+  
+  df_encoded$race = label_encoding(df$race)
+  df_encoded$employment_status = label_encoding(df$employment_status)
+  df_encoded$hhs_geo_region = label_encoding(df$hhs_geo_region)
+  df_encoded$census_msa = label_encoding(df$census_msa)
+  df_encoded$employment_industry = label_encoding(df$employment_industry)
+  df_encoded$employment_occupation = label_encoding(df$employment_occupation)
+  
+  
+  #Metodo 2: algunas variables van a dummies, otras a hash/binary/target
+  #dummies
+  df_encoded_dummies$race = NULL
+  df_encoded_dummies$hhs_geo_region = NULL
+  df_encoded_dummies$census_msa = NULL
+  df_encoded_dummies = cbind( df_encoded_dummies, data.frame(dummy(df$race)),
+                                                  data.frame(dummy(df$hhs_geo_region)),
+                                                  data.frame(dummy(df$census_msa)) )
+  
+  #EL hash es mejor hacerlo en python. La libreria que he visto aquí lo hace pero regular y no es muy facil convertirlo a data.frame de nuevo
+  #Es muy facil. importante revisar al final si hay muchos duplicados o colisiones!
+    #import category_encoders as ce
+    #import pandas as pd
+    #encoder=ce.HashingEncoder(cols="COLUMNA",n_components=6)
+    #encoder.fit_transform(data)
+  
+  #Para el target encoding habría que trabajar con una sola variable de salida (con 4 niveles)
+  #Hago la prueba con solo h1n1 vaccine, pero basta con meter la columna nueva que haga falta
+  target_encoded = df_encoded
+  target_encoded = target_encoded %>% group_by(hhs_geo_region) %>% mutate(hhs_geo_region=mean(h1n1_vaccine)) 
+  target_encoded = target_encoded %>% group_by(employment_industry) %>% mutate(employment_industry=mean(h1n1_vaccine))
+  target_encoded = target_encoded %>% group_by(employment_occupation) %>% mutate(employment_occupation=mean(h1n1_vaccine))
+  
+  #Problema: quizá hay que escalar. Basta con poner 
+  # %>% scale(hhs_geo_region, center=FALSE) 
+  #al final de cada linea (cambiando el nombre)
+
+```
