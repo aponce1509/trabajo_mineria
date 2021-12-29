@@ -17,9 +17,6 @@ training_set = pd.merge(training_set_imp, training_labels, how='inner', on='resp
 training_set['vaccine'] = 2*training_set.h1n1_vaccine + training_set.seasonal_vaccine
 training_set.drop(columns=['respondent_id','h1n1_vaccine','seasonal_vaccine'], inplace=True)
 
-
-
-
 def equal_splitter(dataset, nsplit):
     classes = dataset.iloc[:,-1].unique()
     
@@ -39,36 +36,25 @@ def equal_splitter(dataset, nsplit):
         
     return dataset_split
         
-training_set_split = equal_splitter(training_set, 10)
+nsplit = 5
+training_set_split = equal_splitter(training_set, nsplit)
+training_set_red = pd.DataFrame()
+training_set_labels_red = pd.DataFrame()
 
-split_1 = training_set_split[training_set_split.split_label==0].drop(columns='split_label')
-split_1_X = split_1.drop(columns='vaccine')
-split_1_Y = split_1.vaccine
+for i in range(nsplit):
+    print(f'Comenzando split {i+1}')
+    split = training_set_split[training_set_split.split_label==i].drop(columns='split_label')
+    split_X = split.drop(columns='vaccine')
+    split_Y = split.vaccine
 
-cnn = CondensedNearestNeighbour(random_state=42) 
-cnn.set_params(n_jobs=-1)
-X_res, y_res = cnn.fit_resample(split_1_X, split_1_Y)
-
-
-
-# equal.splitter <- function(x, nsplit){
-#   #Asume que la clase esta en la primera columna
-#   classes = unique(x[[1]])
-#   nclass = length(classes)
-  
-#   x.split = x[FALSE,]
-#   x.shuffled <- x[sample(dim(x)[1]),]
-  
-#   for (i in c(1:nclass)){
-#     x.temp <- x.shuffled %>% filter(.[[1]] == classes[i])
+    cnn = CondensedNearestNeighbour(random_state=42) 
+    cnn.set_params(n_jobs=-1)
+    X_res, y_res = cnn.fit_resample(split_X, split_Y)
+    X_res['split_label'] = i+1
     
-#     split.label <- rep(c(1:nsplit), times=nrow(x.temp) %/% nsplit)
-#     if (length(split.label) != nrow(x.temp)){
-#     split.label <- c(split.label,
-#                       sample(x=c(1:nsplit), size=nrow(x.temp)-length(split.label)))
-#     }
-#     x.temp <- cbind(x.temp, split.label)
-#     x.split <- rbind(x.split, x.temp)
-#   }
-#   x.split
-# }
+    training_set_red = pd.concat([training_set_red, X_res])
+    training_set_labels_red = pd.concat([training_set_labels_red, y_res])
+
+training_set_split.to_csv('training_set_features_split.csv', index=False)
+training_set_red.to_csv('training_set_features_cnn.csv', index=False)
+training_set_labels_red.to_csv('training_set_labels_cnn.csv', index=False)   
