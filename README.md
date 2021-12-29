@@ -28,4 +28,5 @@ Para hacer la imputación he hecho una función en pthon que pasa todas las colu
 				opinion_seas_sick_form_vacc con opinion_h1n1_sick_form_vacc
     Esto me hace pensar que podría ser interesante que, cuando se entrene un modelo para predecir una etiqueta, por ejemplo la de h1n1, se pruebe a usar solo las variables relacionadas con esa vacuna.
   4. houshold_adults con marital_status
+  
   La implementación está en el script correlation.py y el heatmap en Correlation.png
