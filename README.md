@@ -23,8 +23,11 @@ Para hacer la imputación he hecho una función en pthon que pasa todas las colu
   1. behavioral_large_gatherings y behavioral_outside_home
   2. employment_occupation y employment_industry y las dos con health_worker y sex (recordemos que son las dos variables que tenían 50% de NAs)
   3. doctor_recc_h1n1 y doctor_recc_seasonal
+				
 				opinion_seas_vacc_effective con opinion_h1n1_vacc_effective
+				
 				opinion_seas_risk con opinion_h1n1_risk
+				
 				opinion_seas_sick_form_vacc con opinion_h1n1_sick_form_vacc
     Esto me hace pensar que podría ser interesante que, cuando se entrene un modelo para predecir una etiqueta, por ejemplo la de h1n1, se pruebe a usar solo las variables relacionadas con esa vacuna.
   4. houshold_adults con marital_status
