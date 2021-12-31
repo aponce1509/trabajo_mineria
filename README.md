@@ -53,3 +53,89 @@ Para aplicar estos dos algoritmos hay que tener varias cosas en cuenta:
 - También he probado a evaluarlo entrenando KNN con el conjunto inicial y después con el conjunto final. Con CNN se vuelve a obtener el mismo resultado que antes, pero con AllKNN parece que gana bastante precisión (un 10%). Quiero volver a correr el código para confirmar esto.
 
 RESUMEN: Hay muchos tipos de algoritmos y actualmente estoy probando con dos: CNN y AllKNN. De momento el que mejor funciona es el segundo y el dataset que produce se encuentra en scripts/seleccion_instancias/training_set_features_aknn.csv y scripts/seleccion_instancias/training_set_labels_aknn.csv.
+
+## Javier
+
+Category encoder: Para codificar categorias, en las diapositivas hay 5 métodos principales, aunque por ahí he visto alguno que otro más, pero todos son un poco lo mismo. Los 3 casos más comunes son:
+1. Pasar a números sin significado directamente. manzana=1, platano=2, ... Esto es el LABEL O INTEGER ENCODING. Tiene de bueno que es simple y rápido, y sirve para cuando necesitas datos en tipo numérico pero te dan igual las distancias. Si te importan las distancias, como en knn, aquí estás metiendo una información de distancias inventada.
+
+2. Hacer varias columnas de tipo 0 o 1. Lo más fácil de aquí es el DUMMY ENCODING, que por cada categoría dentro de la variable, hace una columna. Si tienes tan solo 2 o 3 categorías, como "Male" o "Female", acabarás con dos columnas, sexMale, sexFemale, cada una con 0 o 1 y nunca ambas pueden ser 1. He visto que suelen poner el límite en 15 categorías. Si tienes más que eso, utiliza métodos más compactos.  Lo útil de este método es que ya puedes usar distancias. Problema: muchas columnas
+A partir de esta idea también está el BINARY ENCODING, que es básicamente hacer un label encoding, por ejemplo, si tienes 20 categórias en la columna, pues poner del 1 al 20, y luego pasas a binario. El 14 será 01111, por tanto lo que haces es meter 5 columnas, y en cada una pones 0 o 1. Problema: pierdes las distancias de nuevo. Ventaja: usas muchas menos columnas. A diferencia del dummy, aquí con 20 variables tienes sólo 5 columnas, en lugar de 20.
+También está el BASEN que es lo mismo pero en lugar de binario con base arbitraria. Y también tenemos el HASH ENCODING, que es muy interesante y dicen que aparece mucho en las competiciones de kaggle como algoritmo ganador. Hace algo similar al binary, en tanto que al final tenemos 4 o 5 columnas, que son muchas menos que las 20 del dummy, pero en el hash lo que se hace es codificar cada categoría de alguna forma con métodos de criptografía o algo. Ventaja: puedes fijar el número de columnas que quieres. Problema: si pones muy pocas columnas, puedes confundir algunas categorías, ya que se pierde info. Otro problema: no sé hacerlo en R, habría que hacer esto exclusivamente en python que ahí sí es más sencillo, pero engorroso.
+
+3.Asignar una etiqueta basada con los datos que tenemos. Aquí hay mil métodos, depende de para qué vayamos a usarlo. Tenemos TARGET ENCODING, que calcula para cada categoría dentro de la variable, la media con respecto a la clase de salida. Es decir, si tenemos sex=Male 60 veces y para esta categoría sale h1n1_vaccine=1 unas 15 veces, asignaremos Male = 15/60 como etiqueta. Se puede mejorar con el LEAVE ONE OUT ENCODING, que se va construyendo según se hace, y sirve para evitar outliers y eso, pero entonces es posible que no sean muy fijas las etiquetas. Es decir, es posible que Male = 0.15 una vez, y luego la próxima instancia de Male sea 0.16. 
+Para estos métodos hay que hacer el fit en train, y con eso calcular las etiquetas del test.
+A parte tenemos el WEIGHT OF EVIDENCE y el PROBABILITY RATIO, que son la misma idea de hacer algún cálculo y ponerlo como etiqueta, pero más sofisticados. Van a ser muy dependientes del caso en concreto... en R creo que no están, pero seguro que en python se puede hacer si a alguien le interesa.
+
+En total, creo que lo más razonable es usar el label encoding para los métodos que no necesiten distancias y/o el hash encoding. Para los métodos que sí usen distancias, transformar todo lo que se pueda a dummy, de forma razonable.
+
+A parte de esto he hecho un pequeño overview de las distintas variables que tenemos, y cómo se podría tratar cada una.
+
+# Variables binarias numericas:
+  
+behavioral_antiviral_meds
+behavioral_avoidance
+behavioral_face_mask
+behavioral_wash_hands
+behavioral_large_gatherings
+behavioral_outside_home
+behavioral_touch_face
+
+doctor_recc_h1n1
+doctor_recc_seasonal
+chronic_med_condition
+child_under_6_months
+health_worker
+health_insurance
+
+  h1n1_vaccine          #target            #no tiene NA
+  seasonal_vaccine      #target            #no tiene NA
+  
+# Variables binarias char:
+  
+sex                                        #no tiene NA
+marital_status
+rent_or_own
+  
+# Variables con orden numericas:
+  
+h1n1_concern
+h1n1_knowledge
+opinion_h1n1_vacc_effective
+opinion_h1n1_risk
+opinion_h1n1_sick_from_vacc
+opinion_seas_vacc_effective
+opinion_seas_risk
+opinion_seas_sick_from_vacc
+
+# Variables con orden char:
+  
+education         #no tiene espaciados constantes
+age_group         #no tiene espaciados constantes         #no tiene NA
+income_poverty    #no tiene espaciados constantes
+
+# Variables sin orden char:
+  
+race                      #pocas variables (4)            #no tiene NA
+employment_status         #casi binario (3)
+hhs_geo_region            #bastantes variables (10)       #no tiene NA
+census_msa                #casi binario (3)               #no tiene NA
+employment_industry       #muchas variables (22)
+employment_occupation     #muchas variables (24)
+
+
+# Conclusion:
+Las binarias numericas no hay que tocarlas, pero recordar que tienen 0 o 1, así que cuidado con la distancia, ya que quizá no tiene sentido calcular la distancia entre sí se pone mascarilla o no. 
+
+Las binarias char hay que pasarlas a binarias normales, no perdemos nada, pero de nuevo tener en cuenta que si queremos usar distancias, habrá que pasar TODO a dummy. Se duplican las columnas hasta ahora.
+
+Las de orden numéricas tampoco hay que tocarlas, y en estas sí *puede* ir bien la distancia y eso, pero quizá hay que normalizarlas.
+*Dijimos que quizá interesa bajar la cardinalidad agrupando 1 y 2, 4 y 5. Al final tendriamos tres grupos: [1,2] [3] [4,5]*
+
+Las de orden char se pueden pasar a numéricas con label encoding, orden pero cuidado con la distancia, porque puede no ser representativa, por ejemplo entre education=1 (<12 años educacion) y education=2 (12 años educacion) y education=3 (College) puede haber problemas. Elegir bien la medida de distancia por estas!
+
+Las de sin orden char... hay que buscarse la vida. 
+Propongo que para race, employment o census, al tener pocas variables, se puede hacer dummy y tan solo creamos unas cuantas más columnas.
+Y para las que tienen bastantes variables, se puede hacer binary, hash o target/LOO (bayesiana). Podemos admitir perder un poco de info.
+(Según he visto, se suele hacer hash para más de 15 variables)
+
