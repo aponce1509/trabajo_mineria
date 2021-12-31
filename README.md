@@ -172,3 +172,16 @@ Nótese que algunas de estas columnas, casi que mejor quitarlas, por lo que quiz
 
 
 ### He subido algunos códigos en otras carpetas de cosas que he ido utilizando. Por ejemplo, javi tenía código para pasar de h1n1 y seasonal, a una sola columna, y yo he hecho una funcion para deshacer ese cambio, para cuando haya que escribir el output para el drivendata. Además, Gabriel había subido un train_set_labels_clean, y los he convertido train_set_labels_clean4, que es usando el codigo de javi para escribir las 2 columnas como una sola con dígitos del 1 al 4.
+
+
+##Jorge
+
+###Outliers
+
+Sobre Outliers univariantes, he creado lo boxplot y demás análisis pero aunque haya datos considerados como outliers creo que realmente no serían outliers, ya que es simplemente que hay menos gente que responda esa opción en la encuesta.
+
+Los Outliers multivariantes si podrían ser interesantes, asique he hecho un test de normalidad multivariante para comprobar si cumple las hipótesis. Otro de los factores que influye es que los métodos de cálculo de outlieirs se basan en distancias, es por ello que muchos atributos no se muy bien que hacer con ellos, pasarlos a factores creo que es la solución más rápida, o quizás omitirlos.
+
+De momento estoy probando con varios paquetes de R a ver cual da mejor resultado pero la idea sería sacar los outliers más extremos y así poder trabajar sin ellos si esque eso le interesa a alguien.
+
+### He subido el script de los outliers en la carpeta de Ruido, y he creado otra carpeta CART donde he puesto el script de mi arbol, con lo que llevo de momento y los resultados.
