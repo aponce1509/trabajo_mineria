@@ -56,6 +56,6 @@ deshacer_multiclass = function(labels){
   }
   colnames(dos_cols) = c("h1n1_vaccine","seasonal_vaccine")
   return(dos_cols)
-}
+} 
 
 
