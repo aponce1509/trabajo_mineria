@@ -38,3 +38,24 @@ training_set_labels_4_bin = (dummy_cols(training_set_labels_4))[,2:5]
 # Exportamos
 write_csv(training_set_labels_4_bin,'training_set_labels_4_bin.csv')
 
+####
+# JAVIER
+####
+#Funcion para deshacer la multiclase
+
+deshacer_multiclass = function(labels){
+  #Toma la columna de clases del dataframe(con valores 1 a 4)
+  #y la convierte en un dataframe de dos columnas
+  dos_cols = data.frame(a=numeric(), b=numeric())
+  for (x in labels){
+    if (x ==1) v=c(1,1)
+    if (x ==2) v=c(1,0)
+    if (x ==3) v=c(0,1)
+    if (x ==4) v=c(0,0)
+    dos_cols=rbind(dos_cols,v)
+  }
+  colnames(dos_cols) = c("h1n1_vaccine","seasonal_vaccine")
+  return(dos_cols)
+}
+
+
