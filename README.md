@@ -56,7 +56,8 @@ RESUMEN: Hay muchos tipos de algoritmos y actualmente estoy probando con dos: CN
 
 ## Javier
 
-Category encoder: Para codificar categorias, en las diapositivas hay 5 métodos principales, aunque por ahí he visto alguno que otro más, pero todos son un poco lo mismo. Los 3 casos más comunes son:
+### Category encoder: 
+Para codificar categorias, en las diapositivas hay unos cúantos métodos, aunque por ahí he visto alguno que otro más, pero todos son un poco lo mismo. Los 3 casos más comunes son:
 1. Pasar a números sin significado directamente. manzana=1, platano=2, ... Esto es el LABEL O INTEGER ENCODING. Tiene de bueno que es simple y rápido, y sirve para cuando necesitas datos en tipo numérico pero te dan igual las distancias. Si te importan las distancias, como en knn, aquí estás metiendo una información de distancias inventada.
 
 2. Hacer varias columnas de tipo 0 o 1. Lo más fácil de aquí es el DUMMY ENCODING, que por cada categoría dentro de la variable, hace una columna. Si tienes tan solo 2 o 3 categorías, como "Male" o "Female", acabarás con dos columnas, sexMale, sexFemale, cada una con 0 o 1 y nunca ambas pueden ser 1. He visto que suelen poner el límite en 15 categorías. Si tienes más que eso, utiliza métodos más compactos.  Lo útil de este método es que ya puedes usar distancias. Problema: muchas columnas
@@ -71,7 +72,7 @@ En total, creo que lo más razonable es usar el label encoding para los métodos
 
 A parte de esto he hecho un pequeño overview de las distintas variables que tenemos, y cómo se podría tratar cada una.
 
-# Variables binarias numericas:
+### Variables binarias numericas:
   
 behavioral_antiviral_meds
 behavioral_avoidance
@@ -91,13 +92,13 @@ health_insurance
   h1n1_vaccine          #target            #no tiene NA
   seasonal_vaccine      #target            #no tiene NA
   
-# Variables binarias char:
+### Variables binarias char:
   
 sex                                        #no tiene NA
 marital_status
 rent_or_own
   
-# Variables con orden numericas:
+### Variables con orden numericas:
   
 h1n1_concern
 h1n1_knowledge
@@ -108,13 +109,13 @@ opinion_seas_vacc_effective
 opinion_seas_risk
 opinion_seas_sick_from_vacc
 
-# Variables con orden char:
+### Variables con orden char:
   
 education         #no tiene espaciados constantes
 age_group         #no tiene espaciados constantes         #no tiene NA
 income_poverty    #no tiene espaciados constantes
 
-# Variables sin orden char:
+### Variables sin orden char:
   
 race                      #pocas variables (4)            #no tiene NA
 employment_status         #casi binario (3)
@@ -124,7 +125,7 @@ employment_industry       #muchas variables (22)
 employment_occupation     #muchas variables (24)
 
 
-# Conclusion:
+### Conclusion:
 Las binarias numericas no hay que tocarlas, pero recordar que tienen 0 o 1, así que cuidado con la distancia, ya que quizá no tiene sentido calcular la distancia entre sí se pone mascarilla o no. 
 
 Las binarias char hay que pasarlas a binarias normales, no perdemos nada, pero de nuevo tener en cuenta que si queremos usar distancias, habrá que pasar TODO a dummy. Se duplican las columnas hasta ahora.
@@ -139,3 +140,7 @@ Propongo que para race, employment o census, al tener pocas variables, se puede 
 Y para las que tienen bastantes variables, se puede hacer binary, hash o target/LOO (bayesiana). Podemos admitir perder un poco de info.
 (Según he visto, se suele hacer hash para más de 15 variables)
 
+Nótese que algunas de estas columnas, casi que mejor quitarlas, por lo que quizá tras selección de características/instancais, no haga falta preocuparse de algunas.
+
+
+### He subido algunos códigos en otras carpetas de cosas que he ido utilizando. Por ejemplo, javi tenía código para pasar de h1n1 y seasonal, a una sola columna, y yo he hecho una funcion para deshacer ese cambio, para cuando haya que escribir el output para el drivendata. Además, Gabriel había subido un train_set_labels_clean, y los he convertido train_set_labels_clean4, que es usando el codigo de javi para escribir las 2 columnas como una sola con dígitos del 1 al 4.
