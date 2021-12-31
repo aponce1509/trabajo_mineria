@@ -69,5 +69,5 @@ knnFit <- train(vaccine ~ ., data = TR_full,
                 method = "knn",
                 trControl = trainControl(method="cv",number = 5),
                 preProcess = c("center","scale"),
-                tuneLength = 20)
+                tuneLength = 30)
 knnFit

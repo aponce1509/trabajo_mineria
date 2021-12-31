@@ -1,7 +1,6 @@
 library(tidyverse)
 library(NoiseFiltersR)
 library(caret)
-library(smotefamily)
 
 training_set_features_imp <- 
   read.csv("~/GitHub/trabajo_mineria/data/x_train_imputed_rf.csv",
@@ -54,34 +53,42 @@ for (i in c(1:nsplit)){
 
 training_set_features_clean <- do.call(rbind, datalist)
 
-training_set_labels_clean <- training_set_features_clean %>% select(vaccine)
-training_set_labels_clean <- 
-  training_set_labels_clean %>%
-  transform(vaccine = as.numeric(vaccine)) %>% 
-  mutate(h1n1_vaccine=ifelse(vaccine %in% c(3,4), 1, 0),
-         seasonal_vaccine=ifelse(vaccine %in% c(2,4), 1, 0))
-
-training_set_features_clean <- training_set_features_clean %>% select(-split_label,-vaccine)  
-training_set_labels_clean <- training_set_labels_clean %>% select(-vaccine)
-
-write_csv(training_set_features_clean, 'training_set_features_nfcnn.csv')
-write_csv(training_set_labels_clean, 'training_set_labels_nfcnn.csv')
+# training_set_labels_clean <- training_set_features_clean %>% select(vaccine)
+# training_set_labels_clean <- 
+#   training_set_labels_clean %>%
+#   transform(vaccine = as.numeric(vaccine)) %>% 
+#   mutate(h1n1_vaccine=ifelse(vaccine %in% c(3,4), 1, 0),
+#          seasonal_vaccine=ifelse(vaccine %in% c(2,4), 1, 0))
+# 
+# training_set_features_clean <- training_set_features_clean %>% select(-split_label,-vaccine)  
+# training_set_labels_clean <- training_set_labels_clean %>% select(-vaccine)
+# 
+# write_csv(training_set_features_clean, 'training_set_features_nfcnn.csv')
+# write_csv(training_set_labels_clean, 'training_set_labels_nfcnn.csv')
 
 ## Medida de bondad
-training_set_features_clean <- do.call(rbind, datalist)
+# training_set_features_clean <- do.call(rbind, datalist)
+# 
+# split_labels = unique(training_set_features_clean$split_label)
+# 
+# for (i in split_labels){
+#   TRj = training_set_features_clean %>% filter(split_label != i) %>% select(-split_label)
+#   TS = data.split %>% filter(split_label == 3) %>% select(-split_label)
+#   
+#   knnFit <- train(vaccine ~ ., data = TRj,
+#                   method = "knn",
+#                   trControl = trainControl(method="cv",number = 5),
+#                   preProcess = c("center","scale"),
+#                   tuneLength = 10)
+#   knnPredict <- predict(knnFit,newdata = TS)
+#   print(confusionMatrix(knnPredict, TS$vaccine)) 
+#   
+# }
 
-split_labels = unique(training_set_features_clean$split_label)
-
-for (i in split_labels){
-  TRj = training_set_features_clean %>% filter(split_label != i) %>% select(-split_label)
-  TS = data.split %>% filter(split_label == 3) %>% select(-split_label)
-  
-  knnFit <- train(vaccine ~ ., data = TRj,
-                  method = "knn",
-                  trControl = trainControl(method="cv",number = 5),
-                  preProcess = c("center","scale"),
-                  tuneLength = 10)
-  knnPredict <- predict(knnFit,newdata = TS)
-  print(confusionMatrix(knnPredict, TS$vaccine)) 
-  
-}
+TR_full <- training_set_features_clean %>% select(-split_label)
+knnFit <- train(vaccine ~ ., data = TR_full,
+                method = "knn",
+                trControl = trainControl(method="cv",number = 5),
+                preProcess = c("center","scale"),
+                tuneLength = 30)
+knnFit
