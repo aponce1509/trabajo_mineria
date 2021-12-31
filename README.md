@@ -174,9 +174,9 @@ Nótese que algunas de estas columnas, casi que mejor quitarlas, por lo que quiz
 ### He subido algunos códigos en otras carpetas de cosas que he ido utilizando. Por ejemplo, javi tenía código para pasar de h1n1 y seasonal, a una sola columna, y yo he hecho una funcion para deshacer ese cambio, para cuando haya que escribir el output para el drivendata. Además, Gabriel había subido un train_set_labels_clean, y los he convertido train_set_labels_clean4, que es usando el codigo de javi para escribir las 2 columnas como una sola con dígitos del 1 al 4.
 
 
-##Jorge
+## Jorge
 
-###Outliers
+### Outliers
 
 Sobre Outliers univariantes, he creado lo boxplot y demás análisis pero aunque haya datos considerados como outliers creo que realmente no serían outliers, ya que es simplemente que hay menos gente que responda esa opción en la encuesta.
 
