@@ -1,7 +1,5 @@
 # %% 
-from os import access
 from IPython.core.interactiveshell import InteractiveShell
-from numpy import int64
 InteractiveShell.ast_node_interactivity = "all"
 import pandas as pd
 import matplotlib.pyplot as plt

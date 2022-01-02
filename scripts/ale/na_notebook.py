@@ -28,7 +28,14 @@ df.head()
 # %%
 na_count_by_row = df.isna().T.sum()
 na_count_by_row.max()
-na_count_by_row[na_count_by_row >= 10]
+print(na_count_by_row[na_count_by_row >= 10])
+na_count_by_col = df.isna().sum()
+# %%
+daux = df[na_count_by_row >= 7]
+
+daux.iloc[:, -1].hist()
+# %%
+daux.iloc[:, -2].hist()
 # %%
 len(df), len(df.dropna())
 # %%
