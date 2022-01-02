@@ -2,6 +2,14 @@
 
 ## Alejandro
 
+ARCHIVOS IMPUTADOS:
+Dos opciones:
+
+1. Considerar que todas las variables tienen una categoría nueva que es NA. Para esto en la carpeta data he puesto un archivo data_0.R que si haces source(data_0.R) te carga las variables como categoría. x_data e y_data son todos los datos de train, luego hay una partición de estos en training y test y luego x_true_test son las variables de test reales que hay subir. En esta estamos quitando las dos variables últimas
+2. Imputar con RF  quitando las dos últimas variables. Esta hecho tanto para el training como para el test. LOS ARCHIVOS SON NUEVOS x_imputed_rf_train_1.csv y x_imputed_rf_test_1.csv. Siguiendo la misma filosofía para el otro archivo teneis source(data_1.R).
+3. Usar la mediana. WIP
+
+
 para la imputación de NAs he hecho dos cosas:
 
 1.  En R. Simplemente considerado el NA como una cat nueva debebmos probar los clasificadores con estos datos. 
