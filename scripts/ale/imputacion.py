@@ -4,16 +4,14 @@ import missingpy
 import numpy as np
 import pandas as pd
 
-if __name__ == "__main__":
-    # lectura de datos
-    # si os da error mirar el working directory
-    # print(os.getcwd())
-    x_train = pd.read_csv("data/training_set_features.csv", dtype='category')
-    y_train = pd.read_csv("data/training_set_labels.csv", dtype='category')
+def data_imputation(PATH, col_names_rm, col_cat_but_imp=None, output_path=""):
+    x_train = pd.read_csv(PATH, dtype='category')
     x_train = x_train.drop("respondent_id", axis=1)
-    df = pd.concat([x_train, y_train], axis=1)
+    if not col_cat_but_imp == None:
+        aux = x_train[col_cat_but_imp]
+    x_train = x_train.drop(col_names_rm, axis=1)
     # filas totales y sin na
-    print(f"Hay {len(df)} filas y {len(df.dropna())} no tienen NaN")
+    print(f"Hay {len(x_train)} filas y {len(x_train.dropna())} no tienen NaN")
     x_train_aux = cat_to_numbers_all(x_train)
     imputer = missingpy.MissForest(
         n_estimators=10,
@@ -29,4 +27,14 @@ if __name__ == "__main__":
         # np.round(x_train_imputed),
         columns=x_train.columns.values
     )
-    x_train_imputed.to_csv("data/x_train_imputed_rf.csv")
+    if not col_cat_but_imp == None:
+        x_train_imputed = pd.concat([x_train_imputed, aux], axis=1)
+    PATH_SALIDA = "data/x_imputed_rf_"  + output_path + ".csv" 
+    x_train_imputed.to_csv(PATH_SALIDA)
+
+if __name__ == "__main__":
+    PATH = "data/training_set_features.csv"
+    col_names_rm = ["employment_industry", "employment_occupation"]
+    data_imputation(PATH, col_names_rm, output_path="train_1")
+    PATH = "data/test_set_features.csv"
+    data_imputation(PATH, col_names_rm, output_path="test_1")

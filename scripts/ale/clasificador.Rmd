@@ -1,0 +1,94 @@
+---
+title: "Naive Bayes"
+author: "Alejandro Ponce Miguela"
+date: "12/31/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(e1071)
+library(caret)
+library(tidyverse)
+```
+
+```{r}
+
+```
+
+
+# Carga datos
+
+```{r}
+source("scripts/ale/data_0.R")
+```
+
+
+# Clasificador
+
+```{r}
+accuracy <- function(model, x_test, y_test) {
+  y_pred <- predict(model, x_test)
+  sum(y_pred == y_test) / length(y_test)
+}
+naive_bayes_test_1 <- function(x_train, y_train, x_test, y_test) {
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 1])
+  acc_h1n1 <- accuracy(nb_default, x_test, y_test[, 1])
+  # probs_h1n1 <- predict(nb_default, x_test, type = "raw")
+  print(paste("Acc h1n1 = ", acc_h1n1))
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 2])
+  acc_seasonal <- accuracy(nb_default, x_test, y_test[, 2])
+  # probs_seasonal <- predict(nb_default, x_test, type = "raw")
+  print(paste("Acc seasonal = ", acc_seasonal))
+}
+# colnames(x_train)
+naive_bayes_test_1(x_train, y_train, x_test, y_test)
+  ```
+
+```{r}
+naive_bayes_test_2 <- function(x_train, y_train, x_test, y_test) {
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 1])
+  acc_h1n1 <- accuracy(nb_default, x_test, y_test[, 1])
+  # probs_h1n1 <- predict(nb_default, x_test, type = "raw")
+  print(paste("Acc h1n1 = ", acc_h1n1))
+  y_pred <- predict(nb_default, x_test)
+  x_train <- cbind(x_train, as.factor(y_train[, 1]))
+  x_test <- cbind(x_test, as.factor(y_pred))
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 2])
+  acc_seasonal <- accuracy(nb_default, x_test, y_test[, 2])
+  # probs_h1n1 <- predict(nb_default, x_test, type = "raw")
+  print(paste("Acc seasonal = ", acc_seasonal))
+}
+# colnames(x_train)
+naive_bayes_test_2(x_train, y_train, x_test, y_test)
+```
+
+```{r}
+source("scripts/ale/data_0.R")
+naive_bayes_def <- function(x_train, y_train, x_test, test_id, path) {
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 1])
+  probs_h1n1 <- predict(nb_default, x_test, type = "raw")
+  probs_h1n1 <- probs_h1n1[, 2] %>% round(1)
+  nb_default <- naiveBayes(x = x_train, y = y_train[, 2])
+  probs_seasonal <- predict(nb_default, x_test, type = "raw")
+  probs_seasonal <- probs_seasonal[, 2] %>% round(1)
+  df <- data.frame(
+    respondent_id = test_id,
+    h1n1_vaccine = probs_h1n1,
+    seasonal_vaccine = probs_seasonal
+  )
+  file_name <- paste("naive_", path, ".csv", sep = "")
+  write.csv(df, file = file_name, row.names = FALSE)
+}
+naive_bayes_def(x_data, y_data, x_true_test, test_id, "0")
+```
+# Prueba 2
+
+```{r}
+source("scripts/ale/data_1.R")
+naive_bayes_test_1(x_train, y_train, x_test, y_test)
+```
+
+```{r}
+head(a)
+```

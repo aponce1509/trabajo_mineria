@@ -2,6 +2,14 @@
 
 ## Alejandro
 
+ARCHIVOS IMPUTADOS:
+Dos opciones:
+
+1. Considerar que todas las variables tienen una categoría nueva que es NA. Para esto en la carpeta data he puesto un archivo data_0.R que si haces source(data_0.R) te carga las variables como categoría. x_data e y_data son todos los datos de train, luego hay una partición de estos en training y test y luego x_true_test son las variables de test reales que hay subir. En esta estamos quitando las dos variables últimas
+2. Imputar con RF  quitando las dos últimas variables. Esta hecho tanto para el training como para el test. LOS ARCHIVOS SON NUEVOS x_imputed_rf_train_1.csv y x_imputed_rf_test_1.csv. Siguiendo la misma filosofía para el otro archivo teneis source(data_1.R).
+3. Usar la mediana. WIP
+
+
 para la imputación de NAs he hecho dos cosas:
 
 1.  En R. Simplemente considerado el NA como una cat nueva debebmos probar los clasificadores con estos datos. 
@@ -52,7 +60,7 @@ Para aplicar estos dos algoritmos hay que tener varias cosas en cuenta:
 - Un aspecto importante es evaluar cuánta información se pierde en el proceso. Para ello lo que hago es testear los conjuntos resultantes con los conjuntos originales de la siguiente manera: Supongamos que las cinco particiones originales son TR1, TR2, TR3, TR4 y TR5; y las cinco nuevas particiones (que forman el nuevo conjunto) son SS1, SS2, etc. Entonces entreno algún modelo (por ejemplo KNN) con el conjunto formado por SS2+3+4+5 y lo testeo con TR1, después entreno un clasificador con SS1+3+4+5 y lo testeo con TR2, y así sucesivamente. Con los dos algoritmos que he probado se pierde aproximadamente un 3-5% de precisión (cuando vuelva a ejecutar los códigos anoto los valores exactos). 
 - También he probado a evaluarlo entrenando KNN con el conjunto inicial y después con el conjunto final. Con CNN se pierde entre un 10% y un 15% (pasa de 64% a 50%, que de hecho es la precisión que se tiene por defecto). Con AllKNN en cambio la precisión sube casi un 10% (hasta 73.8%).
 
-RESUMEN: Hay muchos tipos de algoritmos y actualmente estoy probando con dos: CNN y AllKNN. Debido a que el tamaño del dataset no es tan tan grande, nuestra prioridad con selección de instancias es que mejore la calidad del modelo. Por ahora el único que tiene la posibilidad de hacer esto es AllKNN. Los datasets que se consiguen a partir de él se encuentran en scripts/seleccion_instancias/training_set_features_aknn.csv y scripts/seleccion_instancias/training_set_labels_aknn.csv.
+### RESUMEN: Hay muchos tipos de algoritmos y actualmente estoy probando con dos: CNN y AllKNN. Debido a que el tamaño del dataset no es tan tan grande, nuestra prioridad con selección de instancias es que mejore la calidad del modelo. Por ahora el único algoritmo que he encontrado que tiene la posibilidad de hacer esto es AllKNN. Los datasets que se consiguen a partir de él se encuentran en scripts/seleccion_instancias/training_set_features_aknn_clean.csv y scripts/seleccion_instancias/training_set_labels_aknn_clean.csv. Estos archivos se basan en la imputación por RF de Ale. 
 
 ## Javier
 
