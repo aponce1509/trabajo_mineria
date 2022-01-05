@@ -1,5 +1,15 @@
 library(ggplot2)
 library(tidyverse)
+library(fitdistrplus)  # Ajuste de una distribución -> denscomp 
+library(reshape)   # melt
+library(ggbiplot)  # biplot
+library(outliers)  # Grubbs
+library(MVN)       # mvn: Test de normalidad multivariante  
+library(CerioliOutlierDetection)  #MCD Hardin Rocke
+library(mvoutlier) # corr.plot 
+library(DDoutlier) # lof
+library(cluster)   # PAM
+
 
 
 datos <- as.data.frame(read_csv('training_set_featuresA.csv'))
@@ -38,14 +48,15 @@ outlier_values <- boxplot.stats(df_encoded[,c(1:19)])$out  # outlier values.
 library(MVN)
 library(CerioliOutlierDetection)
 
-test.MVN = mvn(train_l1_c[,c(1:4)], mvnTest = "energy")
+test.MVN = mvn(df_encoded[,c(2:3)], mvnTest = "energy")
 test.MVN$multivariateNormality["MVN"]
 
 #Sale que NO obviamente
 
-set_train = as.data.frame(read_csv('training_set_featuresA.csv'))
+set_train = df_encoded
 set_train = drop_na(set_train)
 
+#Esto no funciona y no se xq
 mod <- lm(df_encoded ~ ., data=df_encoded)
 cooksd <- cooks.distance(mod)
 
@@ -54,9 +65,37 @@ cooksd <- cooks.distance(mod)
 
 set.seed(2)
 
-out <- cerioli2010.fsrmcd.test(as.matrix(set_train[,c(1:3)]), signif.alpha = 0.0000077) 
+out <- cerioli2010.fsrmcd.test(as.matrix(df_encoded[,c(1:3)]), signif.alpha = 0.0000077) 
 out$outliers
 
 
 boxplot(data$pressure_height, main="Pressure Height", boxwex=0.1)
 mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
+
+
+
+#LOF 
+
+num.vecinos.lof = 3 
+lof.scores = LOF(set_train[,c(1:20)], k = num.vecinos.lof)
+length(lof.scores)
+lof.scores = cbind(lof.scores, 1:length(lof.scores))
+#lo ordeno con las etiquetas para facilitar los pasos siguientes
+lof.scores.ordenados = lof.scores[order(lof.scores[,1], decreasing = T),]
+plot(lof.scores.ordenados[,1])
+
+
+num.outliers <- 11
+claves.outliers.lof <- lof.scores.ordenados[1:num.outliers,2]
+nombres.outliers.lof <- nombres_filas(datos.num,claves.outliers.lof)
+set_train[claves.outliers.lof, ]
+
+
+
+#Representación?¿
+clave.max.outlier.lof = claves.outliers.lof[1]
+
+colores = rep("black", times = nrow(set_train))
+colores[clave.max.outlier.lof] = "red"
+pairs(set_train, pch = 19,  cex = 0.5, col = colores, lower.panel = NULL)
+
