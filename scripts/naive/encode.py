@@ -8,6 +8,7 @@ def data_read_train(
     features_drop=None,
     y_data_style="h1n1"
     ):
+    x_data_0 = pd.read_csv("data/training_set_features.csv", dtype='category')
     x_data = pd.read_csv("data/training_set_features.csv", dtype='category')
     features = x_data.columns.values
     if y_data_style == "ml":
@@ -33,9 +34,10 @@ def data_read_train(
         y_data = y_data.iloc[:, 1]
     elif y_data_style == "seasonal":
         y_data = y_data.iloc[:, 2]
-    return x_data, y_data
+    return x_data, y_data, x_data_0
 
 def data_read_test(features_keep=None, features_drop=None):
+    x_data_0 = pd.read_csv("data/test_set_features.csv", dtype='category')
     x_data = pd.read_csv("data/test_set_features.csv", dtype='category')
     features = x_data.columns.values
     if features_keep == None and features_drop == None:
@@ -50,7 +52,7 @@ def data_read_test(features_keep=None, features_drop=None):
             i for i in features_keep if i not in features_drop
         ]
         x_data = x_data[features_keep]
-    return x_data
+    return x_data, x_data_0
 
 
 def ordinal_encoder(data):

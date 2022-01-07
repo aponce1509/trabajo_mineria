@@ -46,6 +46,10 @@ def median_imputation(x_data, features_NA_as_cat=None):
 def constant_imputation(x_data, features_NA_as_cat):
     if features_NA_as_cat == "all":
         features_NA_as_cat = x_data.columns.values
+    features_NA_as_cat = [
+        i for i in features_NA_as_cat if i in x_data.columns.values
+    ]
+
     for i in features_NA_as_cat:
         aux = pd.Series(x_data[i], dtype="category")
         aux = aux.cat.add_categories("-1")

@@ -17,16 +17,16 @@ def preprocesamiento_naive(
     return_something: bool=False,
     sc_max_depth=5,
     print_cor=False,
+    muchos_NA_var=None
 ):
     # Leemos
-    x_train, y_train = data_read_train(
+    x_train, y_train, x_train_0 = data_read_train(
         features_keep, features_drop, y_data_style)
-    test = data_read_test(features_keep, features_drop)
+    test, test_0 = data_read_test(features_keep, features_drop)
     # Encode
     x_train = ordinal_encoder(x_train)
     test = ordinal_encoder(test)
-    x_train_no_imputed = x_train
-    test_no_imputed = test
+
     # Imputation
     if not features_NA_as_cat == None:
         x_train = constant_imputation(x_train, features_NA_as_cat)
@@ -40,7 +40,17 @@ def preprocesamiento_naive(
     elif imputation_method == "knn":
         raise Exception("WIP, Venga más tarde aun no knn")
     # Nuevas variables
-
+    if not muchos_NA_var == None:
+        na_count = x_train_0.isna().T.sum()
+        muchos_na = na_count >= muchos_NA_var
+        muchos_na = muchos_na.astype(int)
+        muchos_na.name = "muchos_na"
+        x_train = pd.concat([x_train, muchos_na], axis=1)
+        na_count = test_0.isna().T.sum()
+        muchos_na = na_count >= muchos_NA_var
+        muchos_na.name = "muchos_na"
+        muchos_na = muchos_na.astype(int)
+        test = pd.concat([test, muchos_na], axis=1)
     # Seleccion de caracteristicas
     if not seek_correlation == None:
         mat, cor = cramer_V_mat(x_train, y_train, seek_correlation)

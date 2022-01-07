@@ -3,23 +3,24 @@ import numpy as np
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from prepro_py import preprocesamiento_naive
-PAHT_OUTPUT = "scripts/naive/Experimentos/exp_2"
+PAHT_OUTPUT = "scripts/naive/Experimentos/exp_6"
 
 # Descripción del exp:
-# Experimento 2:
+# Experimento 5:
 # imputacion con mediana, consideradon como Na como categoria en 
 # ["employment_industry", "employment_occupation"] y la de los seguros
 # uso boruta para quitar variables me quedo con las que están en azul o 
-# en verde solo hago una iteración. No he quitado variables correlacionadas
+# en verde varias iteraciones. Quitando variables correlacionadas (igual que el 3)
+# Añadimos algunas más que traten la NA como categoria algunas que tienen mucha
+# correlacion
 # SALTAN MUCHOS WARNINGS
-
+    
 features_keep = ['respondent_id', 'h1n1_knowledge', 'doctor_recc_h1n1',
-    'doctor_recc_seasonal',
     'health_worker', 'health_insurance', 'opinion_h1n1_vacc_effective',
     'opinion_h1n1_risk', 'opinion_seas_vacc_effective', 'opinion_seas_risk',
     'age_group', 'education', 'race', 'employment_industry',
-    'employment_occupation', 'census_msa']
-features_drop = None
+    'employment_occupation']
+features_drop = ["doctor_recc_seasonal", "health_worker"]
 features_keep_sea = ['respondent_id', 'h1n1_concern', 'h1n1_knowledge',
     'doctor_recc_h1n1',
     'doctor_recc_seasonal', 'health_worker', 'health_insurance',
@@ -28,7 +29,7 @@ features_keep_sea = ['respondent_id', 'h1n1_concern', 'h1n1_knowledge',
     'opinion_seas_risk', 'opinion_seas_sick_from_vacc', 'age_group',
     'education', 'race', 'income_poverty', 'rent_or_own', 'household_children',
     'employment_industry', 'employment_occupation', 'behavioral_face_mask']
-features_drop_sea = None
+features_drop_sea = ["doctor_recc_h1n1", "health_worker"]
 features_keep_ml = ['respondent_id', 'h1n1_knowledge', 'behavioral_face_mask',
     'doctor_recc_h1n1', 'doctor_recc_seasonal', 'health_worker',
     'health_insurance', 'opinion_h1n1_vacc_effective', 'opinion_h1n1_risk',
@@ -39,16 +40,20 @@ features_keep_ml = ['respondent_id', 'h1n1_knowledge', 'behavioral_face_mask',
 features_drop_ml = None
 
 # Dos clasificadores
-features_NA_as_cat = "all"
-imputation_method = "rf"
+features_NA_as_cat = [
+    "employment_industry", "employment_occupation", "health_insurance",
+    "doctor_recc_h1n1", "doctor_recc_seasonal", "household_children"
+    ]
+imputation_method = "median"
 n_estimators = 10
 criterion = "gini"
 feature_selection = False
-seek_correlation = 0.4
+seek_correlation = 0.3
 to_csv = True
 return_something = False
 sc_max_depth = 5
 print_cor = True
+muchos_NA_var = 7
 # H1N1 
 y_data_style = "h1n1"
 print("h1n1:")
@@ -66,7 +71,8 @@ preprocesamiento_naive(
     to_csv,
     return_something,
     sc_max_depth,
-    print_cor
+    print_cor,
+    muchos_NA_var
 )
 # seasonal
 y_data_style = "seasonal"
@@ -85,7 +91,8 @@ preprocesamiento_naive(
     to_csv,
     return_something,
     sc_max_depth,
-    print_cor
+    print_cor,
+    4
 )
 # ml
 print("multi_label")
