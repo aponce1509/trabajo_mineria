@@ -9,36 +9,44 @@ library(rpart)
 
 set_train = as.data.frame(read_csv('training_set_featuresA.csv'))
 set_labels = as.data.frame(read_csv('training_set_labels.csv'))
+df_test = as.data.frame(read_csv('test_set_featuresA.csv'))
 
 # Preprocesamiento $ en construccion/ testeo $
 
-train_l1 = merge(set_train,set_labels[,c(1,2)])
-train_l1$respondent_id = NULL
-train_l1 = as.data.frame(lapply(train_l1,as.factor))
-levels(train_l1$h1n1_vaccine) = c('No','Yes')
+df_h1 = merge(set_train,set_labels[,c(1,2)])
+df_h1$respondent_id = NULL
+df_h1 = as.data.frame(lapply(df_h1 ,as.factor))
+levels(df_h1$h1n1_vaccine) = c('No','Yes')
 
-train_l1_c = drop_na(train_l1)
+train_l1_c = drop_na(df_h1)
 
-train_l2 = merge(set_train,set_labels[,c(1,3)])
-train_l2$respondent_id = NULL
-train_l2 = as.data.frame(lapply(train_l2,as.factor))
-levels(train_l2$seasonal_vaccine) = c('No','Yes')
+df_sea = merge(set_train,set_labels[,c(1,3)])
+df_sea$respondent_id = NULL
+df_sea = as.data.frame(lapply(df_sea,as.factor))
+levels(df_sea$seasonal_vaccine) = c('No','Yes')
+
+df_test$respondent_id = NULL
+df_test = as.data.frame(lapply(df_test,as.factor))
+
 
 # Como ejemplo hago un tuning de parámetros aleatorio. Indico cuántas combinaciones
 # quiero estudiar.
 
-Length = 5
+length = 10
 
-# Siembro las semillas para que los resultados sean reproducibles. Preguntar a javi?¿?
+# Siembro las semillas para que los resultados sean reproducibles.
+
 set.seed(11)
 
-seeds = vector(mode = "list", length = 11)
-for(i in 1:10) seeds[[i]] = sample.int(n=1000, 5)
-seeds[[11]] = sample.int(1000, 1)
+seeds = vector(mode = "list", length = 26)
+for(i in 1:25) seeds[[i]] = sample.int(n=1000, 10)
+
+seeds[[26]] = sample.int(1000, 1)
 
 # Creamos el modelo de tree
-tree_cart = trainControl(method = "cv",
+tree_cart = trainControl(method = "repeatedcv",
                            number = 5,
+                           repeats = 3,
                            # paralelo true***
                            allowParallel = TRUE,
                            seeds = seeds,
@@ -57,43 +65,58 @@ registerDoParallel(cluster)
 #con na.pass le decimos directamente que omita los NA
 
 
-set.seed(1)
-tree_l1 = train(h1n1_vaccine~., data=train_l1, method='rpart', 
+set.seed(11)
+tree_h1 = train(h1n1_vaccine~., data=df_h1, method='rpart', 
                     na.action = na.pass,
                     trControl = tree_cart, 
                     metric = 'ROC',
-                    tuneLength=Length)
+                    tuneLength=length)
 
-set.seed(1)
-tree_l2 = train(seasonal_vaccine~., data=train_l2, method='rpart', 
+set.seed(11)
+tree_sea = train(seasonal_vaccine~., data=df_sea, method='rpart', 
                     na.action = na.pass, 
                     trControl = tree_cart, 
                     metric = 'ROC', 
-                    tuneLength=Length)
+                    tuneLength=length)
 
 # Terminamos la paralelización
 stopCluster(cluster)
 registerDoSEQ()
 
 # Importancia de las variables en los dos modelos
-imp_l1 = varImp(tree_l1)
-imp_l1 = imp_l1$importance[1]
-imp_l1 = imp_l1[order(imp_l1$Overall,decreasing=T),,drop=F]
-imp_l1
+imp_h1 = varImp(tree_h1)
+imp_h1 = imp_h1$importance[1]
+imp_h1 = imp_h1[order(imp_h1$Overall,decreasing=T),,drop=F]
+imp_h1
 
 # Importancia de las variables en los dos modelos
-imp_l2 = varImp(tree_l2)
-imp_l2 = imp_l2$importance[1]
-imp_l2 = imp_l2[order(imp_l2$Overall,decreasing=T),,drop=F]
-imp_l2
+imp_sea = varImp(tree_sea)
+imp_sea = imp_sea$importance[1]
+imp_sea = imp_sea[order(imp_sea$Overall,decreasing=T),,drop=F]
+imp_sea
 
+#Una vez tenemos el arbol predecimos con el conjunto de test, para ello lo cargamos de la siguiente forma:
 
-#Probamos la predicción sobre el propio conjunto de train:
+#Primero la predicción sobre el conjunto de test:
 
-tree_l1
-out_l1 = predict(tree_l1, na.action = na.pass)
+tree_h1
 
-out_l2 = predict(tree_l2, na.action = na.pass)
+out_h1 = predict(tree_h1, newdata = df_test, na.action = na.pass, type = "prob")
+out_sea = predict(tree_sea, newdata = df_test, na.action = na.pass, type = "prob")
+
+sub = read_csv("submission_format.csv")
+sub$h1n1_vaccine = out_h1[,2]
+sub$seasonal_vaccine = out_sea[,2]
+
+sub
+
+#Exportamos las subidas...
+
+write_csv(sub, "primerasubida.csv")
+#0.7979
+write_csv(sub, "segundasubida.csv")
+#0.8021 cambiando simplemente de 10 folds a 5 solamente.
+write_csv(sub, "tercerasubida.csv")
 
 
 #Sacamos el in y el output del conjunto train en factores para que confusionMatrix no proteste
