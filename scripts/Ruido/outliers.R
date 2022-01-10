@@ -9,6 +9,7 @@ library(CerioliOutlierDetection)  #MCD Hardin Rocke
 library(mvoutlier) # corr.plot 
 library(DDoutlier) # lof
 library(cluster)   # PAM
+library(NoiseFiltersR)
 
 
 
@@ -17,15 +18,12 @@ dat_lab <- as.data.frame(read_csv('training_set_labels.csv'))
 df_test <- as.data.frame(read_csv('test_set_features.csv'))
 
 
-df = merge(datos,dat_lab)
+df_encoded = merge(datos,dat_lab)
 #df$respondent_id = NULL
 
 #antes de nada: hace falta pasarlo todo a factores y los NA quitarlos. Lo he puesto aquí aparte por si hiciese
 # falta ajustar alguno en particular
 
-
-
-df_encoded = df
 
 df_encoded$respondent_id = NULL
 
@@ -48,36 +46,47 @@ df_encoded$census_msa = label_encoding(df$census_msa)
 df_encoded$employment_industry = label_encoding(df$employment_industry)
 df_encoded$h1n1_concern = label_encoding(df$employment_occupation)
 df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-df_encoded$employment_occupation = label_encoding(df$employment_occupation)
-
 df_encoded = df_encoded %>% mutate_if(is.numeric,label_encoding)
 
-df = df %>% mutate_if(is.character,label_encoding)
-df = df %>% mutate_if(is.numeric,as.factor)
+# Para todo como factor directamente
+df_encoded = df_encoded %>% mutate_if(is.character,label_encoding)
+df_encoded = df_encoded %>% mutate_if(is.numeric,as.factor)
 
+#Pasar a numeric
 
+df_encoded = df_encoded %>% mutate_if(is.factor,as.numeric)
 
-str(df)
 str(df_encoded)
 
-df_encoded = (as.data.frame(as.factor(apply(df_encoded, 2, as.factor))))
+
+# Custom encoding del test
+
+set_test = df_test
+
+df_test = df_test %>% mutate_if(is.character,label_encoding)
+df_test = df_test %>% mutate_if(is.numeric,as.factor)
+
+#Pasar a numeric
+
+df_test = df_test %>% mutate_if(is.factor,as.numeric)
+
+str(df_test)
+
+
+
+# Por si interesa ver el boxplot de algunos de los atributos, lo dejo aquí. 
+# El propio boxplor marca outliers, ojo que son univariantes y sirve de poco
 
 boxplot(df_encoded[,c(1:22)])
 outlier_values <- boxplot.stats(df_encoded[,c(1:19)])$out  # outlier values.
 
-# AQUI HE PUESTO LAS DOS COSAS QUE MEJOR FUNCIONAN EL LOF Y NOISEFILTERS
+
+# AQUI HE PUESTO LAS COSAS QUE MEJOR FUNCIONAN EL LOF Y NOISEFILTERS
+
 #LOF 
-
 df_encoded = df_encoded %>% mutate_if(is.factor, as.numeric)
-df_test_encoded = df_test_encoded %>% mutate_if(is.factor, as.numeric)
+df_test_encoded = df_test %>% mutate_if(is.factor, as.numeric)
 
-set_train = df_encoded
 set_train = drop_na(set_train)
 
 str(set_train)
@@ -86,6 +95,7 @@ num.vecinos.lof = 5
 lof.scores = LOF(set_train[,-1], k = num.vecinos.lof)
 length(lof.scores)
 lof.scores = cbind(lof.scores, set_train[1])
+
 #lo ordeno con las etiquetas para facilitar los pasos siguientes
 lof.scores.ordenados = lof.scores[order(lof.scores[,1], decreasing = T),]
 plot(lof.scores.ordenados[,1])
@@ -97,18 +107,15 @@ claves.outliers.lof <- lof.scores.ordenados[1:num.outliers,2]
 
 
 lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x ==claves.outliers.lof), 1, 0 ) })
-lista
 
-set.train.limpio <- set_train[(lista == 0),] #estos eguro que se puede simplificar pero bueno, si funciona no lo arregles
+set_train_limpio_LOF <- set_train[(lista == 0),] #estos eguro que se puede simplificar pero bueno, si funciona no lo arregles
 
-write_csv(set.train.limpio, "train_sin_outliers_LOF.csv")
+write_csv(set_train_limpio_LOF, "train_sin_outliers_LOF.csv")
 
 
 #igual pero para el test
 
-set_test = df_test_encoded
-set_test = drop_na(set_test)
-
+set_test = drop_na(df_test_encoded)
 str(set_test)
 
 num.vecinos.lof = 5 
@@ -124,34 +131,47 @@ plot(lof.scores.ordenados[,1])
 num.outliers <- 500
 claves.outliers.lof <- lof.scores.ordenados[1:num.outliers,2]
 
-lista = sapply(set_test$respondent_id, function(x) {ifelse(any( x ==claves.outliers.lof), 1, 0 ) })
-lista
+lista = sapply(set_test$respondent_id, function(x) {ifelse(any( x == claves.outliers.lof), 1, 0 ) })
 
-set.test.limpio <- set_train[(lista == 0),] 
-write_csv(set.test.limpio, "train_sin_outliers_LOF.csv")
-
+set_test_limpio_LOF <- set_test[(lista == 0),] 
+write_csv(set_test_limpio_LOF, "train_sin_outliers_LOF.csv")
 
 
 
+### LOF AVANZADO (en python)
 
-# Otro paquete que he visto que elimina el ruido podría ser interesante ya que
-# es relativamente facil de implementar y parece tener buenas reviews xD
+sklearn.neighbors.LocalOutlierFactor(n_neighbors=20, *, algorithm='auto',
+                                           leaf_size=30, metric='minkowski', 
+                                           p=2, metric_params=None, contamination='auto', 
+                                           novelty=False, n_jobs=None)
 
-# ojo que parece que si son factors tarda mucho mas, quizas pasar todo a numeric
 
-ruidos_h1n1 = NoiseFiltersR::IPF(h1n1_vaccine ~ ., data=df)
-df_h1n1 = ruidos_h1n1$cleanData
+
+
+
+# Otro paquete que he visto que elimina el ruido (respecto a las variables de salida) podría
+# ser interesante ya que es relativamente facil de implementar y parece tener buenas reviews xD
+
+# ojo que parece que si o si tienen que ser factors
+
+df_encoded$respondent_id = NULL
+
+ruidos_h1n1 = NoiseFiltersR::IPF(h1n1_vaccine ~ ., data=df_encoded)
+df_h1n1_ruido = ruidos_h1n1$cleanData
 str(df_h1n1)
+print(ruidos_h1n1)
 
-ruidos_seasonal = NoiseFiltersR::IPF(seasonal_vaccine ~ ., data=df)
-df_seasonal = ruidos_seasonal$cleanData
+
+ruidos_seasonal = NoiseFiltersR::IPF(seasonal_vaccine ~ ., data=df_encoded)
+df_seasonal_ruido = ruidos_seasonal$cleanData
 str(df_seasonal)
+
 
 #Esto por si se quiere exportar a un csv y luego meterlo en vuestro clasificador, si no... se puede copiar
 # el cachito de código de arriba y hasta es mas facil.
 
-write_csv(df_h1n1, "df_h1n1_ruidos.csv")
-write_csv(df_seasonal, "df_seasonal_ruidos.csv")
+write_csv(df_h1n1, "train_ruido_h1n1.csv")
+write_csv(df_seasonal, "train_ruido_seasonal.csv")
 
 
 
@@ -173,12 +193,48 @@ test.MVN$multivariateNormality["MVN"]
 set_train = df_encoded
 set_train = drop_na(set_train)
 
-#Esto sigue sin funcionar y de moemnto no se xq
+
+
+
+# DETECCIÖN MEDIANTE COOKS DISTANCE
 
 mod <- lm(h1n1_vaccine ~ h1n1_concern , data=set_train)
 cooksd <- cooks.distance(mod)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance") #Con la dimensionalidad del dataset esto es ilegible
 
-str(set_train)
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])  # influential row numbers
+head(set_train[influential, ])  # influential observations.
+
+
+lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x == influential), 1, 0 ) })
+lista
+
+set.test.limpio.cooks <- set_train[(lista == 0),] 
+write_csv(set.test.limpio.cooks, "train_sin_outliers_COOKS.csv")
+
+
+str(set.test.limpio.cooks)
+
+
+mod.test <- lm(h1n1_vaccine ~ h1n1_concern , data=set_test)
+cooksd <- cooks.distance(mod)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance") #Con la dimensionalidad del dataset esto es ilegible
+
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])  # influential row numbers
+head(set_train[influential, ])  # influential observations.
+
+
+lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x == influential), 1, 0 ) })
+lista
+
+set.test.limpio.cooks <- set_train[(lista == 0),] 
+write_csv(set.test.limpio.cooks, "train_sin_outliers_COOKS.csv")
+
+
+
+
+
+
 
 #Posibles outliers: los NA se omiten:
 
