@@ -1,78 +1,63 @@
+
 #Librerias: rpart es la que incorpora el cart en R
 
 library(tidyverse)
 library(caret)
 library(rpart)
-
+library(NoiseFiltersR)
 
 #Dataset in
 
-set_train = as.data.frame(read_csv('training_set_featuresA.csv'))
+set_train = as.data.frame(read_csv('training_set_features.csv'))
 set_labels = as.data.frame(read_csv('training_set_labels.csv'))
-df_test = as.data.frame(read_csv('test_set_featuresA.csv'))
-
-# Dataset con outliers
-#Prueba con NoiseFIlter
-df_h1 = df_h1n1_ruido
-df_sea = df_seasonal_ruido
-
-df_h1$seasonal_vaccine = NULL
-df_sea$h1n1_vaccine = NULL
-
-
-#Prueba con LOF
-
-df_h1 = apply(1:nrows(set_train),1, function(x) {if(any(  == lista)){x} })
-df_sea = set_train[(lista == 0),]
-
-df_h1$seasonal_vaccine = NULL
-df_h1$respondent_id = NULL
-df_sea$h1n1_vaccine = NULL
-df_sea$respondent_id = NULL
-
-str(df_h1)
-
-#df_test = set_test_limpio_LOF 
-#df_test$respondent_id = NULL
-
-
-
-# Prueba con COOKS
-
-df_h1 = set.test.limpio.cooks
-df_sea = set.test.limpio.cooks
-
-df_h1$seasonal_vaccine = NULL
-df_h1$respondent_id = NULL
-df_sea$h1n1_vaccine = NULL
-df_sea$respondent_id = NULL
-
-
-
+df_test = as.data.frame(read_csv('test_set_features.csv'))
 
 # Preprocesamiento $ en construccion/ testeo $
+
+
+set_train[set_train == ""] <- NA
+set_train <- set_train[, -c(35, 36)]
+set_train[is.na(set_train)] <- "NA"
+
+df_test[df_test == ""] <- NA
+df_test <- df_test[, -c(35, 36)]
+df_test[is.na(df_test)] <- "NA"
+
+
 
 df_h1 = merge(set_train,set_labels[,c(1,2)])
 df_h1$respondent_id = NULL
 df_h1 = as.data.frame(lapply(df_h1 ,as.factor))
-
 levels(df_h1$h1n1_vaccine) = c('No','Yes')
 
 
 df_sea = merge(set_train,set_labels[,c(1,3)])
 df_sea$respondent_id = NULL
 df_sea = as.data.frame(lapply(df_sea,as.factor))
-
 levels(df_sea$seasonal_vaccine) = c('No','Yes')
 
 df_test$respondent_id = NULL
 df_test = as.data.frame(lapply(df_test,as.factor))
 
 
+#Ruidos
+
+ruidos_h1n1 = edgeBoostFilter(h1n1_vaccine ~ ., data=df_h1)
+df_h1 = ruidos_h1n1$cleanData
+str(df_h1)
+print(ruidos_h1n1)
+
+
+ruidos_seasonal = edgeBoostFilter(seasonal_vaccine ~ ., data=df_sea)
+df_sea= ruidos_seasonal$cleanData
+str(df_sea)
+print(ruidos_seasonal)
+
+
 # Como ejemplo hago un tuning de parámetros aleatorio. Indico cuántas combinaciones
 # quiero estudiar.
 
-length = 20
+length = 50
 
 # Siembro las semillas para que los resultados sean reproducibles.
 
@@ -86,9 +71,10 @@ seeds[[26]] = sample.int(1000, 1)
 # Creamos el modelo de tree
 tree_cart = trainControl(method = "cv",
                            number = 5,
+                         #  repeats = 3,
                            # paralelo true***
                            allowParallel = TRUE,
-                           seeds = seeds,
+                         #  seeds = seeds,
                            classProbs = T,
                            summaryFunction = twoClassSummary, 
                            search='random')
@@ -103,26 +89,20 @@ registerDoParallel(cluster)
 # Generamos dos modelos, uno para predecir cada etiqueta.
 #con na.pass le decimos directamente que omita los NA
 
-#Caso de que se eliminen demasiados niveles en algún coso
-l <- sapply(df_h1, function(x) length(levels(x)))
-l
-df_h1$employment_status = NULL
-
-l <- sapply(df_sea, function(x) length(levels(x)))
-l
-levels(df_sea$employment_status) = c(0,1)
-levels(df_h1$employment_status) = c(0,1)
-
 
 set.seed(11)
-tree_h1 = train(h1n1_vaccine~., data=df_h1, method='rpart', 
+tree_h1 = train(h1n1_vaccine~., 
+                    data=df_h1,
+                    method='rpart', 
                     na.action = na.pass,
                     trControl = tree_cart, 
                     metric = 'ROC',
                     tuneLength=length)
 
 set.seed(11)
-tree_sea = train(seasonal_vaccine~., data=df_sea, method='rpart', 
+tree_sea = train(seasonal_vaccine~. , 
+                    data=df_sea, 
+                    method='rpart', 
                     na.action = na.pass, 
                     trControl = tree_cart, 
                     metric = 'ROC', 
@@ -132,7 +112,7 @@ tree_sea = train(seasonal_vaccine~., data=df_sea, method='rpart',
 stopCluster(cluster)
 registerDoSEQ()
 
-# Importancia de las variables en los dos modelos (ESTO ni caso x ahora)
+# Importancia de las variables en los dos modelos
 imp_h1 = varImp(tree_h1)
 imp_h1 = imp_h1$importance[1]
 imp_h1 = imp_h1[order(imp_h1$Overall,decreasing=T),,drop=F]
@@ -151,8 +131,8 @@ imp_sea
 tree_h1
 tree_sea
 
-out_h1 = predict(tree_h1, newdata = df_test, na.action = na.pass, type = "prob")
-out_sea = predict(tree_sea, newdata = df_test, na.action = na.pass, type = "prob")
+out_h1 = predict(tree_h1, newdata = df_test,  type = "prob")
+out_sea = predict(tree_sea, newdata = df_test,  type = "prob")
 
 sub = read_csv("submission_format.csv")
 sub$h1n1_vaccine = out_h1[,2]
@@ -162,26 +142,16 @@ sub
 
 #Exportamos las subidas...
 
-write_csv(sub, "primerasubida.csv")
-#0.7979
-write_csv(sub, "segundasubida.csv")
-#0.8021 cambiando simplemente de 10 folds a 5 solamente.
-write_csv(sub, "tercerasubida.csv")
-#0.7999 poniendo repeated cv con los 5 folds y tres repeticiones
-write_csv(sub, "4subida.csv")
-#0.6423 con el test y train de seleccion de instancias con aknn_clean
-write_csv(sub, "5subida.csv")
-#0.7989 con el test y train de x_imputed_median_true
-write_csv(sub, "6subida.csv")
-#0.8007 con el test y train de x_imputed_median_true y mejorando el cp con length 100
-write_csv(sub, "7subida.csv")
-#0.7988 quitando el ruido con cv 5 y la función NoiseFilter
-write_csv(sub, "8subida.csv")
-#0.8021   con el NA.omit de todo y eliminando los 500 primeros outliers en train con LOF
-write_csv(sub, "9subida.csv")
-##.8011 imputacion quitando las 7 ultimas que dice BORUTA
-write_csv(sub, "10subida.csv")
-#0.7965    quitando outliers con el método cooks distance deja 24919 observaciones
+write_csv(sub, "11subida.csv")
+#0.8144 características test y train poniendo los NA como categoría extra OJO ESTABA EN CROSSCV 5 y 3 aaaa
+write_csv(sub, "12subida.csv")
+#0.7709  caracteristicas test y train y poniendo los NA igual, pero con Noise filter y además cv simple con 5
+write_csv(sub, "13subida.csv")
+#0.8144 caracteristicas test y train y poniendo los NA igual, pero con Noise filter modificado edge y cv 5 3
+write_csv(sub, "14subida.csv")
+#0.8191  caracteristicas test y train y poniendo los NA igual, pero con Noise filter modificado edge y cv simple 5
+write_csv(sub, "15subida.csv")
+# 0.8180   caracteristicas test y train y poniendo los NA igual, pero con Noise filter modificado edge y cv simple 10+leng cambiado a 50
 
 
 
