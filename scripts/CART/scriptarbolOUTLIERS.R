@@ -11,18 +11,43 @@ set_train = as.data.frame(read_csv('training_set_featuresA.csv'))
 set_labels = as.data.frame(read_csv('training_set_labels.csv'))
 df_test = as.data.frame(read_csv('test_set_featuresA.csv'))
 
+# Dataset con outliers
+#Prueba con NoiseFIlter
+df_h1 = df_h1n1_ruido
+df_sea = df_seasonal_ruido
+
+df_h1$seasonal_vaccine = NULL
+df_sea$h1n1_vaccine = NULL
+
+
+#Prueba con LOF
+
+df_h1 = set_train_limpio_LOF
+df_sea = set_train_limpio_LOF
+
+df_h1$seasonal_vaccine = NULL
+df_h1$respondent_id = NULL
+df_sea$h1n1_vaccine = NULL
+df_sea$respondent_id = NULL
+
+str(df_h1)
+
+df_test = set_test_limpio_LOF 
+df_test$respondent_id = NULL
+
 # Preprocesamiento $ en construccion/ testeo $
 
 df_h1 = merge(set_train,set_labels[,c(1,2)])
 df_h1$respondent_id = NULL
 df_h1 = as.data.frame(lapply(df_h1 ,as.factor))
+
 levels(df_h1$h1n1_vaccine) = c('No','Yes')
 
-train_l1_c = drop_na(df_h1)
 
 df_sea = merge(set_train,set_labels[,c(1,3)])
 df_sea$respondent_id = NULL
 df_sea = as.data.frame(lapply(df_sea,as.factor))
+
 levels(df_sea$seasonal_vaccine) = c('No','Yes')
 
 df_test$respondent_id = NULL
@@ -44,9 +69,8 @@ for(i in 1:25) seeds[[i]] = sample.int(n=1000, 10)
 seeds[[26]] = sample.int(1000, 1)
 
 # Creamos el modelo de tree
-tree_cart = trainControl(method = "repeatedcv",
+tree_cart = trainControl(method = "cv",
                            number = 5,
-                           repeats = 3,
                            # paralelo true***
                            allowParallel = TRUE,
                            seeds = seeds,
@@ -64,6 +88,14 @@ registerDoParallel(cluster)
 # Generamos dos modelos, uno para predecir cada etiqueta.
 #con na.pass le decimos directamente que omita los NA
 
+#Caso de que se eliminen demasiados niveles en algún coso
+l <- sapply(df_h1, function(x) length(levels(x)))
+l
+df_h1$employment_status = NULL
+
+l <- sapply(df_sea, function(x) length(levels(x)))
+l
+df_sea$employment_status = NULL
 
 set.seed(11)
 tree_h1 = train(h1n1_vaccine~., data=df_h1, method='rpart', 
@@ -83,7 +115,7 @@ tree_sea = train(seasonal_vaccine~., data=df_sea, method='rpart',
 stopCluster(cluster)
 registerDoSEQ()
 
-# Importancia de las variables en los dos modelos
+# Importancia de las variables en los dos modelos (ESTO ni caso x ahora)
 imp_h1 = varImp(tree_h1)
 imp_h1 = imp_h1$importance[1]
 imp_h1 = imp_h1[order(imp_h1$Overall,decreasing=T),,drop=F]
@@ -117,6 +149,20 @@ write_csv(sub, "primerasubida.csv")
 write_csv(sub, "segundasubida.csv")
 #0.8021 cambiando simplemente de 10 folds a 5 solamente.
 write_csv(sub, "tercerasubida.csv")
+#0.7999 poniendo repeated cv con los 5 folds y tres repeticiones
+write_csv(sub, "4subida.csv")
+#0.6423 con el test y train de seleccion de instancias con aknn_clean
+write_csv(sub, "5subida.csv")
+#0.7989 con el test y train de x_imputed_median_true
+write_csv(sub, "6subida.csv")
+#0.8007 con el test y train de x_imputed_median_true y mejorando el cp con length 100
+write_csv(sub, "7subida.csv")
+#0.7988 quitando el ruido con cv 5 y la función NoiseFilter
+write_csv(sub, "8subida.csv")
+#0.8007 quitando el ruido con cv 5 y la función NoiseFilter
+
+
+
 
 
 #Sacamos el in y el output del conjunto train en factores para que confusionMatrix no proteste

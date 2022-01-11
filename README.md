@@ -187,9 +187,14 @@ Nótese que algunas de estas columnas, casi que mejor quitarlas, por lo que quiz
 ### Outliers
 
 Sobre Outliers univariantes, he creado lo boxplot y demás análisis pero aunque haya datos considerados como outliers creo que realmente no serían outliers, ya que es simplemente que hay menos gente que responda esa opción en la encuesta.
+++Tras probar varias cosas y ver más opciones creo que lo único que tiene sentido serían los outliers multivariantes.
 
-Los Outliers multivariantes si podrían ser interesantes, asique he hecho un test de normalidad multivariante para comprobar si cumple las hipótesis. Otro de los factores que influye es que los métodos de cálculo de outlieirs se basan en distancias, es por ello que muchos atributos no se muy bien que hacer con ellos, pasarlos a factores creo que es la solución más rápida, o quizás omitirlos.
+Los Outliers multivariantes si podrían ser interesantes, asique he hecho un test de normalidad multivariante para comprobar si cumple las hipótesis (no la cumple, y al ser datos tipo factores 0,1 creo que los métodos estadísticos no tienen soporte y no veo ventajas de usarlos). Otro de los factores que influye es que los métodos de cálculo de outlieirs se basan en distancias, es por ello que muchos atributos no se muy bien que hacer con ellos, pasarlos a factores creo que es la solución más rápida, o quizás omitirlos.
+++ LOF da los mejores resultados de todos, simplemente se elije el dataset (todo tiene que ser as.numeric para que funcione) y el rango k de vecinos.
+++ También el método Cooks distance parece funcional, y no se carga demasiadas filas
+++He incorporado también un filtro de ruido de la libreria NoiseFiltersR, que parece funcionar bastante bien, y es fácil de implementar, ya qeu la función se encarga de tunerar todos los parámetros del filtro. (la función prueba varios algoritmos de reduccion de ruido y selecciona)
+++ De moemnto el fallo principal de estos métodos es que 1, se basan en distancias, y 2 no admiten por ello ningún NA, esto probando ahora con las distintas imputaciones a ver que resultado dan.
 
-De momento estoy probando con varios paquetes de R a ver cual da mejor resultado pero la idea sería sacar los outliers más extremos y así poder trabajar sin ellos si esque eso le interesa a alguien.
+De momento estoy probando con varios paquetes de R a ver cual da mejor resultado pero la idea sería sacar los outliers más extremos y así poder trabajar sin ellos si esque eso le interesa a alguien. ++ He actualizado el archivo outliers.R para que se pueda extraer fácilmente la parte de código que se quiera y probar con los filtros.
 
 ### He subido el script de los outliers en la carpeta de Ruido, y he creado otra carpeta CART donde he puesto el script de mi arbol, con lo que llevo de momento y los resultados.

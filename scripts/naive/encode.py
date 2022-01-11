@@ -8,15 +8,27 @@ def data_read_train(
     features_drop=None,
     y_data_style="h1n1"
     ):
-    x_data_0 = pd.read_csv("data/training_set_features.csv", dtype='category')
-    x_data = pd.read_csv("data/training_set_features.csv", dtype='category')
+    x_data_0 = pd.read_csv(
+        # "../../../../data/training_set_features.csv",
+        "data/training_set_features.csv",
+        dtype='category'
+        )
+    x_data = pd.read_csv(
+        # "../../../../data/training_set_features.csv",
+        "data/training_set_features.csv",
+        dtype='category'
+        )
     features = x_data.columns.values
     if y_data_style == "ml":
         y_data = pd.read_csv(
             "data/training_set_labels_4.csv", dtype='category'
         )
     else:
-        y_data = pd.read_csv("data/training_set_labels.csv", dtype='category')
+        y_data = pd.read_csv(
+            # "../../../../data/training_set_labels.csv",
+            "data/training_set_labels.csv",
+            dtype='category'
+        )
     if features_keep == None and features_drop == None:
         pass
     elif features_keep == None and features_drop != None:
@@ -37,8 +49,16 @@ def data_read_train(
     return x_data, y_data, x_data_0
 
 def data_read_test(features_keep=None, features_drop=None):
-    x_data_0 = pd.read_csv("data/test_set_features.csv", dtype='category')
-    x_data = pd.read_csv("data/test_set_features.csv", dtype='category')
+    x_data_0 = pd.read_csv(
+        "data/test_set_features.csv",
+        # "../../../../data/test_set_features.csv",
+        dtype='category'
+    )
+    x_data = pd.read_csv(
+        "data/test_set_features.csv",
+        # "../../../../data/test_set_features.csv",
+        dtype='category'
+    )
     features = x_data.columns.values
     if features_keep == None and features_drop == None:
         pass

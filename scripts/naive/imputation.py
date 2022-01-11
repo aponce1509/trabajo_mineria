@@ -31,7 +31,7 @@ def rf_imputation(x_data, n_estimators=10, criterion="gini"):
         x_train_imputed = pd.concat([respondent_id, x_train_imputed], axis=1)
     return x_train_imputed
 
-def median_imputation(x_data, features_NA_as_cat=None):
+def median_imputation(x_data):
     # filas totales y sin na
     print(f"Hay {len(x_data)} filas y {len(x_data.dropna())} no tienen NaN")
     imputer = SimpleImputer(strategy='median')
@@ -43,7 +43,7 @@ def median_imputation(x_data, features_NA_as_cat=None):
     )
     return x_train_imputed
 
-def constant_imputation(x_data, features_NA_as_cat):
+def constant_imputation(x_data, features_NA_as_cat, value="miss"):
     if features_NA_as_cat == "all":
         features_NA_as_cat = x_data.columns.values
     features_NA_as_cat = [
@@ -52,7 +52,7 @@ def constant_imputation(x_data, features_NA_as_cat):
 
     for i in features_NA_as_cat:
         aux = pd.Series(x_data[i], dtype="category")
-        aux = aux.cat.add_categories("-1")
-        aux[aux.isna()] = "-1"
+        aux = aux.cat.add_categories(value)
+        aux[aux.isna()] = value
         x_data[i] = aux
     return x_data

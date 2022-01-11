@@ -68,6 +68,9 @@ def boruta(x_data, y_data, sc_max_depth=5):
   print('features in the blue area:', blue_area)
 
 
+  
+
+
 if __name__ == "__main__":
   import prepro_py
   data = prepro_py.preprocesamiento_naive()
