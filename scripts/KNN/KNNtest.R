@@ -28,6 +28,17 @@ training_set_labels <-
 test_set_features <- 
   read.csv("~/GitHub/trabajo_mineria/data/x_test_imputed_median_true.csv")
 
+#Opcion 2
+source('data/data_0.R')
+rm(x_train, x_test, y_train, y_test)
+IS_index <- read_csv("data/index_impmedian_aknn_clean.csv")
+
+training_set_features <- x_data[IS_index[[1]]+1,]
+training_set_labels <- y_data[IS_index[[1]]+1,]
+rownames(training_set_features) <- seq(1,nrow(training_set_features))
+rownames(training_set_labels) <- seq(1,nrow(training_set_features))
+
+test_set_features <- x_true_test
 
 # Ruido y outliers --------------------------------------------------------
 
@@ -37,24 +48,26 @@ test_set_features <-
 # Selección de características --------------------------------------------
 
 training_set_features <- training_set_features %>% select(-hhs_geo_region, -census_msa)
-test_respondent_id <- test_set_features %>% select(respondent_id)
-test_set_features <- test_set_features %>% select(-respondent_id, -hhs_geo_region, -census_msa)
+# test_respondent_id <- test_set_features %>% select(respondent_id)
+# test_set_features <- test_set_features %>% select(-respondent_id, -hhs_geo_region, -census_msa)
+
+test_set_features <- test_set_features %>% select(-hhs_geo_region, -census_msa)
 
 
 # Encoding ----------------------------------------------------------------
-
-factor_cols <- c("race", "employment_status")
-training_set_features[factor_cols] <- lapply(training_set_features[factor_cols], as.factor)
-test_set_features[factor_cols] <- lapply(test_set_features[factor_cols], as.factor)
-
-training_set_features <- dummy_cols(training_set_features, 
-                                    select_columns=factor_cols,
-                                    remove_most_frequent_dummy = TRUE,
-                                    remove_selected_columns = TRUE)
-test_set_features <- dummy_cols(test_set_features, 
-                                select_columns=factor_cols,
-                                remove_most_frequent_dummy = TRUE,
-                                remove_selected_columns = TRUE)
+# 
+# factor_cols <- c("race", "employment_status")
+# training_set_features[factor_cols] <- lapply(training_set_features[factor_cols], as.factor)
+# test_set_features[factor_cols] <- lapply(test_set_features[factor_cols], as.factor)
+# 
+# training_set_features <- dummy_cols(training_set_features, 
+#                                     select_columns=factor_cols,
+#                                     remove_most_frequent_dummy = TRUE,
+#                                     remove_selected_columns = TRUE)
+# test_set_features <- dummy_cols(test_set_features, 
+#                                 select_columns=factor_cols,
+#                                 remove_most_frequent_dummy = TRUE,
+#                                 remove_selected_columns = TRUE)
 
 # Clasificación -----------------------------------------------------------
 

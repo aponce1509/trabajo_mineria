@@ -21,11 +21,22 @@ library(pROC)
 
 # Imputación de NA + Selección de instancias  ---------------------------------------
 
+#Opcion 1
 training_set_features <-
-  read.csv("~/GitHub/trabajo_mineria/training_set_features_impmedian_aknn55_clean.csv",
+  read.csv("~/GitHub/trabajo_mineria/data/training_set_features_impmedian_aknn_clean.csv",
            stringsAsFactors=TRUE)
 training_set_labels <-
-  read_csv("~/GitHub/trabajo_mineria/training_set_labels_impmedian_aknn55_clean.csv")
+  read_csv("~/GitHub/trabajo_mineria/data/training_set_labels_impmedian_aknn_clean.csv")
+
+#Opcion 2
+source('data/data_0.R')
+rm(x_train, x_test, y_train, y_test, x_true_test)
+IS_index <- read_csv("data/index_impmedian_aknn_clean.csv")
+
+training_set_features <- x_data[IS_index[[1]]+1,]
+training_set_labels <- y_data[IS_index[[1]]+1,]
+rownames(training_set_features) <- seq(1,nrow(training_set_features))
+rownames(training_set_labels) <- seq(1,nrow(training_set_features))
 
 # Ruido y outliers --------------------------------------------------------
 
@@ -62,21 +73,18 @@ training_set_labels <-
 # # 2 attributes confirmed unimportant: census_msa,
 # # child_under_6_months;
 
-
-
-
 training_set_features <- training_set_features %>% select(-hhs_geo_region, -census_msa)
 
 
 # Encoding ----------------------------------------------------------------
-
-factor_cols <- c("race", "employment_status")
-training_set_features[factor_cols] <- lapply(training_set_features[factor_cols], as.factor)
-
-training_set_features <- dummy_cols(training_set_features, 
-                                    select_columns=factor_cols,
-                                    remove_most_frequent_dummy = TRUE,
-                                    remove_selected_columns = TRUE)
+# 
+# factor_cols <- c("race", "employment_status")
+# training_set_features[factor_cols] <- lapply(training_set_features[factor_cols], as.factor)
+# 
+# training_set_features <- dummy_cols(training_set_features, 
+#                                     select_columns=factor_cols,
+#                                     remove_most_frequent_dummy = TRUE,
+#                                     remove_selected_columns = TRUE)
 
 
 # Clasificación -----------------------------------------------------------
@@ -85,9 +93,9 @@ set.seed(123)
 shuffle = sample(nrow(training_set_features))
 training_set_features <- training_set_features[shuffle,]
 training_set_labels <- training_set_labels[shuffle,]
-
-normParam <- training_set_features %>% preProcess()
-training_set_features.norm <- predict(normParam, training_set_features)
+# 
+# normParam <- training_set_features %>% preProcess()
+# training_set_features.norm <- predict(normParam, training_set_features)
 
 n.folds = 5
 fold.labels <- rep(c(1:n.folds),

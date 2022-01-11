@@ -55,7 +55,7 @@ training_set.drop(columns=['respondent_id','h1n1_vaccine','seasonal_vaccine'], i
 #     training_set_red = pd.concat([training_set_red, X_res])
 #     training_set_labels_red = pd.concat([training_set_labels_red, y_res])
 
-k=25
+k=3
 
 aknn = AllKNN() 
 aknn.set_params(n_neighbors=k, sampling_strategy='majority', n_jobs=-1)
@@ -69,6 +69,6 @@ training_set_labels_red['h1n1_vaccine'] = [1 if x in (2,3) else 0 for x in train
 training_set_labels_red['seasonal_vaccine'] = [1 if x in (1,3) else 0 for x in training_set_labels_red.iloc[:,0]]
 training_set_labels_red.drop(columns='vaccine', inplace=True)
     
-training_set_red.to_csv('training_set_features_impmedian_aknn25_clean.csv', index=False)
-training_set_labels_red.to_csv('training_set_labels_impmedian_aknn25_clean.csv', index=False)
-index.to_csv('index_impmedian_aknn25_clean.csv', index=False)
+# training_set_red.to_csv('training_set_features_impmedian_aknn25_clean.csv', index=False)
+# training_set_labels_red.to_csv('training_set_labels_impmedian_aknn25_clean.csv', index=False)
+# index.to_csv('index_impmedian_aknn25_clean.csv', index=False)
