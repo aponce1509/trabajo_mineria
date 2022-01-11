@@ -17,7 +17,8 @@ def preprocesamiento_naive(
     return_something: bool=False,
     sc_max_depth=5,
     print_cor=False,
-    muchos_NA_var=None
+    muchos_NA_var=None,
+    value="miss"
 ):
     # Leemos
     x_train, y_train, x_train_0 = data_read_train(
@@ -29,11 +30,11 @@ def preprocesamiento_naive(
 
     # Imputation
     if not features_NA_as_cat == None:
-        x_train = constant_imputation(x_train, features_NA_as_cat)
-        test = constant_imputation(test, features_NA_as_cat)
-    if imputation_method == "median":
-        x_train = median_imputation(x_train, features_NA_as_cat)
-        test = median_imputation(test, features_NA_as_cat)
+        x_train = constant_imputation(x_train, features_NA_as_cat, value)
+        test = constant_imputation(test, features_NA_as_cat, value)
+    if imputation_method == "median" and features_NA_as_cat != "all":
+        x_train = median_imputation(x_train, features_NA_as_cat, value)
+        test = median_imputation(test, features_NA_as_cat, value)
     elif imputation_method == "rf":
         x_train = rf_imputation(x_train, n_estimators, criterion)
         test = rf_imputation(test, n_estimators, criterion)
@@ -58,7 +59,7 @@ def preprocesamiento_naive(
             print(cor)
 
     if feature_selection:
-        boruta(x_train, y_train, sc_max_depth)
+        boruta(x_train, y_train, sc_max_depth)        
     # write in csv
     df = pd.concat([x_train, y_train], axis=1)
     if to_csv:
@@ -78,7 +79,7 @@ def preprocesamiento_naive(
             PATH = join(PAHT_OUTPUT, "ml_prepro_test.csv")
             test.to_csv(PATH, index=False)
     if return_something:
-        return x_train, y_train, test, cor
+        return x_train, y_train, test
     
 
 

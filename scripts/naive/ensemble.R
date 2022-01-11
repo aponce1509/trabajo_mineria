@@ -167,7 +167,7 @@ dos_clasificadores_ensemble <- function(
     }
 }
 
-dos_clasificadores_ensemble(5, 1, 50, 4, use_test = TRUE)
+dos_clasificadores_ensemble(8, 1, 50, 2, p = 0.1, use_test = TRUE)
 n_exp = 5
 lapace_value = 10
 n_bags = 10
