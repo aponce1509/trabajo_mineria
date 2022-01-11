@@ -45,7 +45,7 @@ def encode_imputacion(
 if __name__ == "__main__":
     print(getcwd())
     PATH_OUTPUT = "scripts"
-    features_drop = ['employment_industry', 'employment_occupation']
+    features_drop = None
     encode_imputacion(
-        PATH_OUTPUT, features_drop=features_drop, file_name="_test"
+        PATH_OUTPUT, features_NA_as_cat="all", imputation_method="rf", file_name="_gab"
     )
