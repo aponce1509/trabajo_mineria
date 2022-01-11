@@ -43,12 +43,12 @@ def median_imputation(x_data, features_NA_as_cat=None):
     )
     return x_train_imputed
 
-def constant_imputation(x_data, features_NA_as_cat):
+def constant_imputation(x_data, features_NA_as_cat, constant_value="-1"):
     if features_NA_as_cat == "all":
         features_NA_as_cat = x_data.columns.values
     for i in features_NA_as_cat:
         aux = pd.Series(x_data[i], dtype="category")
-        aux = aux.cat.add_categories("-1")
-        aux[aux.isna()] = "-1"
+        aux = aux.cat.add_categories(constant_value)
+        aux[aux.isna()] = constant_value
         x_data[i] = aux
     return x_data

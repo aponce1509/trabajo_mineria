@@ -6,7 +6,7 @@ from os.path import join
 def encode_imputacion(
     PAHT_OUTPUT,
     features_keep=None, features_drop=None,
-    features_NA_as_cat=None, imputation_method="median",
+    features_NA_as_cat=None, imputation_method="median", constant_value="-1",
     n_estimators=10, criterion="gini", file_name=""
 ):
     # Leemos
@@ -20,8 +20,8 @@ def encode_imputacion(
     test_no_imputed = test
     # Imputation
     if not features_NA_as_cat == None:
-        x_train = constant_imputation(x_train, features_NA_as_cat)
-        test = constant_imputation(test, features_NA_as_cat)
+        x_train = constant_imputation(x_train, features_NA_as_cat, constant_value)
+        test = constant_imputation(test, features_NA_as_cat, constant_value)
     if imputation_method == "median":
         x_train = median_imputation(x_train, features_NA_as_cat)
         test = median_imputation(test, features_NA_as_cat)
