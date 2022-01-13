@@ -43,6 +43,18 @@ def median_imputation(x_data, features_NA_as_cat=None):
     )
     return x_train_imputed
 
+def mode_imputation(x_data, features_NA_as_cat=None):
+    # filas totales y sin na
+    print(f"Hay {len(x_data)} filas y {len(x_data.dropna())} no tienen NaN")
+    imputer = SimpleImputer(strategy='most_frequent')
+    x_train_imputed = imputer.fit_transform(x_data)
+    x_train_imputed = pd.DataFrame(
+        x_train_imputed,
+        # np.round(x_train_imputed),
+        columns=x_data.columns.values
+    )
+    return x_train_imputed
+
 def constant_imputation(x_data, features_NA_as_cat, constant_value="-1"):
     if features_NA_as_cat == "all":
         features_NA_as_cat = x_data.columns.values

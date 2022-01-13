@@ -1,0 +1,111 @@
+---
+title: "reglas_asociacion"
+author: "Javier Moreno"
+date: "30/12/2021"
+output: html_document
+---
+
+#fuentes
+https://sci2s.ugr.es/keel/pdf/algorithm/capitulo/2001-Liu-CBA2.pdf
+
+
+Pruebo un primer acercamiento a las reglas...
+
+
+Cargo los datos
+```{r}
+library(tidyverse)
+
+df_features = read_csv("training_set_features.csv")
+df_labels = read_csv("training_set_labels.csv")
+
+df = merge(df_features,df_labels)
+df=df[,-1] #quito respondent_id
+
+#Approach 1. trato NA como su propia categoria
+indices_char = which(sapply(df,is.numeric)==FALSE) #busco las variables char
+df_num_NA = df[,-indices_char] %>% mutate_all(~replace(., is.na(.), -1))
+df_char_NA = df[,indices_char] %>% mutate_all(~replace(., is.na(.), "ClaseNA"))
+
+df_claseNA = cbind(df_num_NA, df_char_NA)
+#Paso todo a factores(lo que necesita arules)
+df_factores = data.frame(lapply(df_claseNA,factor))
+```
+
+
+```{r}
+library(arules)
+
+transacciones = as(df_factores,"transactions")
+
+summary(transacciones)
+
+itemFrequencyPlot(transacciones, support = 0.3, cex.names=0.7)
+```
+
+Apriori para itemsets frecuentes
+```{r}
+#pongo support 0.3 para ver si no tarrda una barbaridad
+freq_itemset = apriori(transacciones, parameter = list(support = 0.3, target="frequent"))
+freq_itemset = sort(freq_itemset, by="support")
+inspect(head(freq_itemset, n=10))
+#Problema: son 7301, una barbaridad
+
+#veamos la longitud de los itemset frecuentes
+barplot(table(size(freq_itemset)), xlab="itemset size", ylab="count")
+
+
+freq_itemset_length3menos = freq_itemset[size(freq_itemset)<=3]
+freq_itemset_length4 = freq_itemset[size(freq_itemset)==4]
+freq_itemset_length5 = freq_itemset[size(freq_itemset)==5]
+freq_itemset_length6mas = freq_itemset[size(freq_itemset)>=6]
+
+inspect(head(freq_itemset_length3menos,n=20)) #de aqui salen cosas muy obvias, como cosas que salen mucho... el no tener bebe <6 meses, o no tener meds..
+inspect(head(freq_itemset_length6mas,n=20)) #aqui se juntan todas las cosas más comunes... claramente
+
+inspect(head(freq_itemset_length4,n=20))
+inspect(head(freq_itemset_length5,n=20))
+
+```
+
+Encuentro los maximales y cerrados
+```{r}
+max_itemset = freq_itemset[is.maximal(freq_itemset)] #son 1520
+inspect(head(sort(max_itemset, by="support"))) 
+
+closed_itemset = freq_itemset[is.closed(freq_itemset)] #son 7226, casi todos son cerrados lmao
+inspect(head(sort(closed_itemset, by="support")))
+```
+
+Buscamos reglas
+```{r}
+rules = apriori(df_factores2, parameter = list(support = 0.3, confidence = 0.8, minlen = 2))
+#salen 838 reglas con support 0.5 , confidence 0.8
+
+inspect(head(sort(rules, by="lift")))
+
+#quitamos las redundantes (nos quedamos con la mas simple a igualdad de confianza)
+redundant = is.redundant(x = rules, measure = "confidence")
+rulesNoRedundant = rules[!redundant]
+#nos quedamos con 514 solo lol
+
+#podemos dejar solo high lift
+rulesHighLift = subset(rulesNoRedundant, subset = lift>1.2)
+inspect(rulesHighLift)
+#estan decentes pero cosas que ya sabiamos... es que hemos dejado cosas que aparecian casi siempre y esas son las reglas finales
+
+
+#idea: coger las que la conclusion sea "vacunado o no"
+rulesh1n1Vacc = subset(rules, subset= rhs %in% "h1n1_vaccine=0" & rhs %in% "h1n1_vaccine=1")
+inspect(head(rulesh1n1Vacc))
+rulesseasonalVacc = subset(rules, subset= rhs %in% "seasonal_vaccine=0" & rhs %in% "seasonal_vaccine=1")
+inspect(rulesseasonalVacc)
+#salen 0 lol
+```
+
+Ideas de momento: hay variables que aparecen tanto que hay que quitar, y hay otras cosas que no son muy utiles, como que si no te recomiendan vacunarte, no te vacunas lol. Quiza hay que quitar las de recomendaciones 
+
+Hay que darle alguna vuelta mas... cambiar support, confianza... quiza buscar una forma de que solo sean reglas que salga h1n1 o seasonal vaccine...
+
+Y ver mas medidas de calidad
+

@@ -1,0 +1,326 @@
+---
+title: "ripper_en_R_denuevo"
+author: "Javier Moreno"
+date: "6/1/2022"
+output: html_document
+---
+
+
+
+vamo a ver el ripper en r lemao
+```{r}
+library(caret)
+library(RWeka)
+library(tidyverse)
+library(arulesCBA)
+library(pROC)
+```
+
+RWeka tiene 4 algoritmos de reglas. OneR, JRip, M5Rules, y PART.
+
+Primero leo el dataset y convierto los NA a categoria, y todo a factores
+
+```{r}
+
+train_features = read_csv("training_set_features.csv")
+train_labels = read_csv("training_set_labels.csv") 
+test = read_csv("test_set_features.csv")
+
+test_id = test[,1]#guardo el respondent_id para escribirlo luego
+
+#quito respondent_id
+train_features=train_features[,-1] 
+train_labels=train_labels[,-1] 
+test=test[,-1]
+
+
+#Trato NA como su propia categoria
+label_encoder_NA = function(df){
+  indices_char = which(sapply(df,is.numeric)==FALSE) #busco las variables char
+  df_num_NA = df[,-indices_char] %>% mutate_all(~replace(., is.na(.), -1))
+  df_char_NA = df[,indices_char] %>% mutate_all(~replace(., is.na(.), "ClaseNA"))
+  
+  df_claseNA = cbind(df_num_NA, df_char_NA)
+}
+
+train_features = label_encoder_NA(train_features)
+test = label_encoder_NA(test)
+
+#Paso todo a factores
+train_X = data.frame(lapply(train_features,factor))
+train_Y = data.frame(lapply(train_labels,factor))
+
+```
+
+Quito algunas columnas que van a ser caca
+```{r}
+train_X$child_under_6_months=NULL
+train_X$education=NULL
+train_X$behavioral_antiviral_meds=NULL
+train_X$hhs_geo_region=NULL
+train_X$census_msa=NULL
+train_X$behavioral_face_mask=NULL
+
+test$child_under_6_months=NULL
+test$education=NULL
+test$behavioral_antiviral_meds=NULL
+test$hhs_geo_region=NULL
+test$census_msa=NULL
+test$behavioral_face_mask=NULL
+
+#Me guardo el trainX y eso
+train_X_original = train_X
+train_Y_original = train_Y
+
+
+```
+
+
+Funcion para calcular auc y accuracy
+```{r}
+auc_score = function(real, predicho)
+{
+  auc(real,as.numeric(as.character(predicho)))
+}
+```
+
+
+Hago un holdout para probar el resultado
+```{r}
+index_holdout = createDataPartition(train_Y$h1n1_vaccine, p = .8,list = FALSE, times = 1)
+
+
+###
+train_X = train_X[index_holdout,]
+train_Y = train_Y[index_holdout,]
+test_falso_X = train_X[-index_holdout,]
+test_falso_Y = train_Y[-index_holdout,]
+
+#Pruebo el Jrip
+h1n1_vacc = train_Y[,1]
+seasonal_vacc = train_Y[,2]
+
+train_h1n1 = cbind(train_X, h1n1_vacc)
+train_seasonal = cbind(train_X, seasonal_vacc)
+test_falso_h1n1 = cbind(test_falso_X, h1n1_vacc = test_falso_Y[,1])
+test_falso_seasonal = cbind(test_falso_X, seasonal_vacc = test_falso_Y[,2])
+
+clf_h1n1 = JRip(h1n1_vacc~., data=train_h1n1)
+clf_seas = JRip(seasonal_vacc~., data=train_seasonal)
+
+pred_h1n1 = predict(clf_h1n1, test_falso_X)
+pred_seas = predict(clf_seas, test_falso_X)
+
+resul_h1n1 = auc_accuracy(test_falso_Y$h1n1_vaccine,pred_h1n1) %>% print()
+resul_seas = auc_accuracy(test_falso_Y$seasonal_vaccine,pred_seas) %>% print()
+
+evaluate_Weka_classifier(clf_h1n1, newdata=test_falso_h1n1)
+evaluate_Weka_classifier(clf_seas, newdata=test_falso_seasonal)
+```
+
+Voy a hacer CV y grid search
+```{r}
+library(parallel)
+library(doParallel)
+
+cluster = makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+
+q2 = c()
+for (f in 7:9){
+  q1 = c()
+  for(o in 7:9){
+    ##################
+    #codigo para CV
+    index_CV = createFolds(train_Y_original$h1n1_vaccine, k=5, returnTrain=TRUE)
+
+    resultados =c()
+    #Comienzo el CV
+    for (indices in index_CV){ #cada iteracion toma una de las distintas 5 particiones
+    
+      train_X = train_X_original[indices,]
+      train_Y = train_Y_original[indices,]
+      test_X = train_X_original[-indices,]
+      test_Y = train_Y_original[-indices,]
+      
+      train_h1n1 = cbind(train_X, h1n1_vacc = train_Y[,1])
+      train_seasonal = cbind(train_X, seasonal_vacc = train_Y[,2])
+      
+      test_h1n1 = cbind(test_X, h1n1_vacc = test_Y[,1])
+      test_seasonal = cbind(test_X, seasonal_vacc = test_Y[,2])
+      
+      clf_h1n1 = JRip(h1n1_vacc~., data=train_h1n1,control = Weka_control(F=f,N=2,O=o))
+      clf_seasonal = JRip(seasonal_vacc~., data=train_seasonal,control = Weka_control(F=f,N=2,O=o))
+      
+      pred_h1n1 = predict(clf_h1n1, test_X)
+      pred_seasonal = predict(clf_seasonal, test_X)
+      
+      resul_h1n1 = auc_score(test_Y$h1n1_vaccine,pred_h1n1) 
+      resul_seasonal = auc_score(test_Y$seasonal_vaccine,pred_seasonal)
+      resul_total = cbind(resul_h1n1,resul_seasonal)
+      
+      resultados = rbind(resultados, resul_total)
+    }
+    
+    media_auc_CV = mean(apply(resultados,2,mean)) %>% print()
+    
+    ############
+    
+    q1 = cbind(q1, media_auc_CV) 
+  }
+  q2 = rbind(q2,q1)
+  print(q2)
+}
+colnames(q2) = c("o=1","o=2","o=3","o=4")
+rownames(q2) = c("f=1","f=2","f=3","f=4")
+
+q3 = data.frame(q2)
+q3
+write_csv(q3,"gridsearch_CV_Jrip.csv")
+
+```
+
+Entre f y n con el gridsearch, parece que a partir de f=2, todo es igual. EL n apenas afecta y el f>2 tampoco. 
+Podriamos elegir entonces f=2 y n=1
+
+De entre f y o, de nuevo f da un pooc igual a partir de f>2, y o creo que mejora cuando o sube, casi siempre. Entonces lo mejor es f=2, n=1, o=4 o lo mas alto posible.
+
+Creo que f=4 es el que mejor va pero puede ser casualidad
+
+Mas alla de 4, F=6 y O=6, N=3 ha salido to bien
+
+resultado de F=6 y O cambiando: O=6, 0.741904    O=7, 0.7426696    O=8, 0.7418874    O=9, 0.7405127
+resultado de F cambiando y O=6:  F=6, 0.7409   F=7, 0.74105    F=8, 0.7388   F=9, 0.7389
+
+Vamos parece quie lo mejor es 7 y 7, ya cambiar mas va a peor
+
+Entonces una vez sabemos qué parámetros poner, vamos a probar con distintos preprocesamientos
+
+Podemos: NA dejarlos como categoria. NA imputarlos con rf, NA imputarlos con mediana. Una vez hecho eso, se puede hacer seleccion de instancias con aknn.
+Una vez hecho eso se puede hacer seleccion de caracteristicas con boruta?
+
+Voy a hacerlo todo con CV
+
+leer el rf y eso
+```{r}
+rf_test = read_csv("x_test_imputed_median_true.csv") 
+rf_train = read_csv("training_set_features_aknn_clean.csv") 
+
+rf_train_labels = read_csv("training_set_labels_aknn_clean.csv") 
+
+test_id = rf_test[,1]
+test = rf_test[,-1]
+train_X_original = rf_train
+train_Y_original = rf_train_labels
+
+train_X_original = data.frame(lapply(train_X_original,factor))
+train_Y_original = data.frame(lapply(train_Y_original,factor))
+
+train_X_original$child_under_6_months=NULL
+train_X_original$education=NULL
+train_X_original$behavioral_antiviral_meds=NULL
+train_X_original$hhs_geo_region=NULL
+train_X_original$census_msa=NULL
+train_X_original$behavioral_face_mask=NULL
+
+test$child_under_6_months=NULL
+test$education=NULL
+test$behavioral_antiviral_meds=NULL
+test$hhs_geo_region=NULL
+test$census_msa=NULL
+test$behavioral_face_mask=NULL
+
+```
+
+
+```{r}
+#selecciono instancias
+indices_aknn = read_csv("index_impmedian_aknn_clean.csv")
+indices_aknn = unlist(indices_aknn+1)
+train_X_original2 = train_X_original[indices_aknn,]
+train_Y_original2 = train_Y_original[indices_aknn,]
+
+#codigo para CV
+index_CV = createFolds(train_Y_original2$h1n1_vaccine, k=7, returnTrain=TRUE)
+
+resultados =c()
+  #Comienzo el CV
+  for (indices in index_CV){ #cada iteracion toma una de las distintas 5 particiones
+  
+    train_X = train_X_original2[indices,]
+    train_Y = train_Y_original2[indices,]
+    test_X = train_X_original2[-indices,]
+    test_Y = train_Y_original2[-indices,]
+    
+    train_h1n1 = cbind(train_X, h1n1_vaccine = train_Y[,1])
+    train_seasonal = cbind(train_X, seasonal_vaccine = train_Y[,2])
+    
+    test_h1n1 = cbind(test_X, h1n1_vaccine = test_Y[,1])
+    test_seasonal = cbind(test_X, seasonal_vaccine = test_Y[,2])
+    
+    clf_h1n1 = JRip(h1n1_vaccine~., data=train_h1n1,control = Weka_control(F=7,N=3,O=7))
+    clf_seasonal = JRip(seasonal_vaccine~., data=train_seasonal,control = Weka_control(F=7,N=3,O=7))
+    
+    pred_h1n1 = predict(clf_h1n1, test_X)
+    pred_seasonal = predict(clf_seasonal, test_X)
+    
+    resul_h1n1 = auc_score(test_Y$h1n1_vaccine,pred_h1n1) 
+    resul_seasonal = auc_score(test_Y$seasonal_vaccine,pred_seasonal)
+    resul_total = cbind(resul_h1n1,resul_seasonal)
+    
+    resultados = rbind(resultados, resul_total)
+  }
+  
+media_auc_CV = mean(apply(resultados,2,mean)) %>% print()
+    
+```
+
+
+rf_imputed (todas las cols excepto dos que iban fuera) es 0.734463
+rf_imputed con muchas columnas fuera 0.7343
+
+rf_imputed con aknn y fuera cols es 0.8335591
+
+median_imputed con aknn y fuera cols es 0.8361
+
+NA como categoria , aknn y fuera cols es 0.838
+
+
+
+Finalmente elijo el mejor o el que quiera y escribo las predicciones
+
+```{r}
+    train_X = train_X_original2
+    train_Y = train_Y_original2
+    test_X = data.frame(lapply(test, factor))
+    
+    train_h1n1 = cbind(train_X, h1n1_vacc = train_Y[,1])
+    train_seasonal = cbind(train_X, seasonal_vacc = train_Y[,2])
+  
+    clf_h1n1 = JRip(h1n1_vacc~., data=train_h1n1,control = Weka_control(F=7,N=3,O=7))
+    clf_seasonal = JRip(seasonal_vacc~., data=train_seasonal,control = Weka_control(F=7,N=3,O=7))
+    
+    pred_h1n1 = predict(clf_h1n1, test_X)
+    pred_seasonal = predict(clf_seasonal, test_X)
+    
+    escribir = data.frame(cbind(respondent_id = test_id, h1n1_vaccine = pred_h1n1, seasonal_vaccine = pred_seasonal))
+    write_csv(escribir, "NAcat_aknn_sincols.csv")
+```
+
+
+
+
+#####tengo que probar oneR y eso lol
+
+Me voy al CBA
+```{r}
+clf_h1n1 = CBA(h1n1_vacc~., train_h1n1,supp=0.05, conf=0.3,verbose=TRUE)
+pred_h1n1  = predict(clf_h1n1, test)
+
+clf_seas = CBA(seas_vacc~., train_seas,supp=0.05, conf=0.3,verbose=TRUE)
+pred_seas  = predict(clf_seas, test)
+
+total = data.frame(cbind(respondent_id = test_id, h1n1_vaccine = pred_h1n1, seasonal_vaccine = pred_seas))
+write_csv(total, "CBA_sinpreproc.csv")
+```
+

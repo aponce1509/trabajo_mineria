@@ -28,8 +28,9 @@ def encode_imputacion(
     elif imputation_method == "rf":
         x_train = rf_imputation(x_train, n_estimators, criterion)
         test = rf_imputation(test, n_estimators, criterion)
-    elif imputation_method == "knn":
-        raise Exception("WIP, Venga más tarde aun no knn")
+    elif imputation_method == "mode":
+        x_train = mode_imputation(x_train, features_NA_as_cat)
+        test = mode_imputation(test, features_NA_as_cat)
     # Nuevas variables
     PATH = join(
         PAHT_OUTPUT,
@@ -47,5 +48,5 @@ if __name__ == "__main__":
     PATH_OUTPUT = "scripts"
     features_drop = None
     encode_imputacion(
-        PATH_OUTPUT, features_NA_as_cat="all", imputation_method="rf", file_name="_gab"
+        PATH_OUTPUT, features_NA_as_cat=None, imputation_method="rf", file_name=""
     )

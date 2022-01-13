@@ -87,7 +87,7 @@ outlier_values <- boxplot.stats(df_encoded[,c(1:19)])$out  # outlier values.
 df_encoded = df_encoded %>% mutate_if(is.factor, as.numeric)
 df_test_encoded = df_test %>% mutate_if(is.factor, as.numeric)
 
-set_train = drop_na(set_train)
+set_train = drop_na(df_encoded)
 
 str(set_train)
 
@@ -102,18 +102,26 @@ plot(lof.scores.ordenados[,1])
 
 #aqui selecciono la cantidad de outliers que quiero quitar
 
-num.outliers <- 500
+num.outliers <- 1500
 claves.outliers.lof <- lof.scores.ordenados[1:num.outliers,2]
 
+lista = c()
+  
 
-lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x ==claves.outliers.lof), 1, 0 ) })
+any(set_train$respondent_id == claves.outliers.lof)
+
+lista = lapply(claves.outliers.lof, function(x) {if(any( x == set_train$respondent_id)){x} })
+
+if (condition) {
+  
+}
 
 set_train_limpio_LOF <- set_train[(lista == 0),] #estos eguro que se puede simplificar pero bueno, si funciona no lo arregles
 
 write_csv(set_train_limpio_LOF, "train_sin_outliers_LOF.csv")
 
 
-#igual pero para el test
+#igual pero para el test (ojo cuidado que habría que sustituir los NA por algo NO CARGARSELOS que si no no funciona luego el predict obviamente)
 
 set_test = drop_na(df_test_encoded)
 str(set_test)
@@ -126,9 +134,7 @@ lof.scores = cbind(lof.scores, set_test[1])
 lof.scores.ordenados = lof.scores[order(lof.scores[,1], decreasing = T),]
 plot(lof.scores.ordenados[,1])
 
-#aqui selecciono la cantidad de outliers que quiero quitar
 
-num.outliers <- 500
 claves.outliers.lof <- lof.scores.ordenados[1:num.outliers,2]
 
 lista = sapply(set_test$respondent_id, function(x) {ifelse(any( x == claves.outliers.lof), 1, 0 ) })
@@ -166,6 +172,13 @@ ruidos_seasonal = NoiseFiltersR::IPF(seasonal_vaccine ~ ., data=df_encoded)
 df_seasonal_ruido = ruidos_seasonal$cleanData
 str(df_seasonal)
 
+## Método alternativo de la misma librería a mi me da mejor resultado porque se carga bastantes menos
+# y creo que eso para mi arbol es importante pero es probarlo vamos
+ruidos_h1n1 = edgeBoostFilter(h1n1_vaccine ~ ., data=df_encoded)
+ruidos_seasonal = edgeBoostFilter(seasonal_vaccine ~ ., data=df_encoded)
+
+#sacarlo igual con $cleanData
+
 
 #Esto por si se quiere exportar a un csv y luego meterlo en vuestro clasificador, si no... se puede copiar
 # el cachito de código de arriba y hasta es mas facil.
@@ -178,25 +191,9 @@ write_csv(df_seasonal, "train_ruido_seasonal.csv")
 
 
 
-
-
-# Test normalidad multivariante parece ser que no, aunque no se si tiene sentido al ser todo cosas 0 o 1?
-
-library(MVN)
-library(CerioliOutlierDetection)
-
-test.MVN = mvn(df_encoded[,c(2:3)], mvnTest = "energy")
-test.MVN$multivariateNormality["MVN"]
-
-#Sale que NO es una distribución normal obviamente. ASique descartamos a priori todos los test estadísticos para detectar outliers (poco potentes y si no tienen soporte?)
+# DETECCIÖN MEDIANTE COOKS DISTANCE
 
 set_train = df_encoded
-set_train = drop_na(set_train)
-
-
-
-
-# DETECCIÖN MEDIANTE COOKS DISTANCE
 
 mod <- lm(h1n1_vaccine ~ h1n1_concern , data=set_train)
 cooksd <- cooks.distance(mod)
@@ -209,27 +206,44 @@ head(set_train[influential, ])  # influential observations.
 lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x == influential), 1, 0 ) })
 lista
 
-set.test.limpio.cooks <- set_train[(lista == 0),] 
-write_csv(set.test.limpio.cooks, "train_sin_outliers_COOKS.csv")
+set.train.limpio.cooks <- set_train[(lista == 0),] 
+write_csv(set.train.limpio.cooks, "train_sin_outliers_COOKS.csv")
 
 
-str(set.test.limpio.cooks)
+str(set.train.limpio.cooks)
 
 
-mod.test <- lm(h1n1_vaccine ~ h1n1_concern , data=set_test)
-cooksd <- cooks.distance(mod)
-plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance") #Con la dimensionalidad del dataset esto es ilegible
-
-influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])  # influential row numbers
-head(set_train[influential, ])  # influential observations.
 
 
-lista = sapply(set_train$respondent_id, function(x) {ifelse(any( x == influential), 1, 0 ) })
-lista
 
-set.test.limpio.cooks <- set_train[(lista == 0),] 
-write_csv(set.test.limpio.cooks, "train_sin_outliers_COOKS.csv")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ESTO AL FINAL NI CASO
+# Test normalidad multivariante parece ser que no, aunque no se si tiene sentido al ser todo cosas 0 o 1?
+
+library(MVN)
+library(CerioliOutlierDetection)
+
+test.MVN = mvn(df_encoded[,c(2:3)], mvnTest = "energy")
+test.MVN$multivariateNormality["MVN"]
+
+#Sale que NO es una distribución normal obviamente. ASique descartamos a priori todos los test estadísticos para detectar outliers (poco potentes y si no tienen soporte?)
+
+set_train = df_encoded
+set_train = drop_na(set_train)
 
 
 
