@@ -465,6 +465,9 @@ prob_class2 = predict(tree_class2, newdata = dataTest, type = "prob", na.action 
 # 
 # prob_class2 = prob_class2/ntree
 
+
+
+
 # Terminamos la paralelización
 stopCluster(cluster)
 registerDoSEQ()
