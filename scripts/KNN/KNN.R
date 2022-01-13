@@ -1,54 +1,54 @@
-# https://rdrr.io/cran/mldr/man/mldr_from_dataframe.html
-# https://search.r-project.org/CRAN/refmans/utiml/html/mlknn.html
-# https://www.rdocumentation.org/packages/utiml/versions/0.1.7/topics/predict.MLKNNmodel
-# https://cran.r-project.org/web/packages/mldr/vignettes/mldr.pdf
-# https://rdrr.io/github/fcharte/mldr/man/mldr_evaluate.html
-# https://sci2s.ugr.es/sites/default/files/bbvasoftware/publications/Neucom289-68-85.pdf
-
 library(tidyverse)
 library(caret)
 
 library(Boruta)
-library(fastDummies)
+# library(fastDummies)
+library(DDoutlier)
 
 library(philentropy)
-# library(FastKNN)
-
-# library(utiml)
-# library(mldr.datasets)
 library(pROC)
-
 
 # Imputación de NA + Selección de instancias  ---------------------------------------
 
 #Opcion 1
-training_set_features <-
-  read.csv("~/GitHub/trabajo_mineria/data/training_set_features_impmedian_aknn_clean.csv",
-           stringsAsFactors=TRUE)
-training_set_labels <-
-  read_csv("~/GitHub/trabajo_mineria/data/training_set_labels_impmedian_aknn_clean.csv")
+# x_train <-
+#   read.csv("~/GitHub/trabajo_mineria/data/training_set_features_impmedian_aknn_clean.csv",
+#            stringsAsFactors=TRUE)
+# x_train.label <-
+#   read_csv("~/GitHub/trabajo_mineria/data/training_set_labels_impmedian_aknn_clean.csv")
 
 #Opcion 2
 source('data/data_0.R')
-rm(x_train, x_test, y_train, y_test, x_true_test)
+rm(x_train, x_test, y_train, y_test, x_true_test, x_data_na)
 IS_index <- read_csv("data/index_impmedian_aknn_clean.csv")
 
-training_set_features <- x_data[IS_index[[1]]+1,]
-training_set_labels <- y_data[IS_index[[1]]+1,]
-rownames(training_set_features) <- seq(1,nrow(training_set_features))
-rownames(training_set_labels) <- seq(1,nrow(training_set_features))
+x_train <- x_data[IS_index[[1]]+1,]
+x_train.label <- y_data[IS_index[[1]]+1,]
+rownames(x_train) <- seq(1,nrow(x_train))
+rownames(x_train.label) <- seq(1,nrow(x_train))
 
-# Ruido y outliers --------------------------------------------------------
+# Outliers ----------------------------------------------------------------
 
-# Missing
+x_num <- read_csv("data/training_set_features_impmedian_aknn_clean.csv")
+x_num.norm <- as.data.frame(scale(x_num))
+num.vecinos.lof = 5 
+lof.scores = LOF(x_num.norm, k = num.vecinos.lof)
+
+plot(sort(lof.scores, decreasing=TRUE) ~ seq_along(lof.scores), 
+     xlab='Index', ylab='Puntuaciones LOF')
+
+outliers = which(lof.scores > 1.4)
+
+x_train = x_train[-outliers,]
+x_train.label = x_train.label[-outliers,]
 
 # Selección de características --------------------------------------------
 # 
-# train_c1 = data.frame(training_set_features,h1n1_vaccine=training_set_labels[,1])
+# train_c1 = data.frame(x_train,h1n1_vaccine=x_train.label[,1])
 # train_c1 = as.data.frame(lapply(train_c1,as.factor))
 # levels(train_c1$h1n1_vaccine) = c('No','Yes')
 # 
-# train_c2 = data.frame(training_set_features,seasonal_vaccine=training_set_labels[,2])
+# train_c2 = data.frame(x_train,seasonal_vaccine=x_train.label[,2])
 # train_c2 = as.data.frame(lapply(train_c2,as.factor))
 # levels(train_c2$seasonal_vaccine) = c('No','Yes')
 # 
@@ -73,39 +73,50 @@ rownames(training_set_labels) <- seq(1,nrow(training_set_features))
 # # 2 attributes confirmed unimportant: census_msa,
 # # child_under_6_months;
 
-training_set_features <- training_set_features %>% select(-hhs_geo_region, -census_msa)
+# SFS
+# h1n1: 2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32
+# seas: 2, 3, 5, 11, 12, 14, 15, 17, 19, 20, 21, 22, 23, 24, 28, 30, 33
 
+x_train_h1n1 <- x_train %>% select(2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32)
+x_train_seas <- x_train %>% select(2, 3, 5, 11, 12, 14, 15, 17, 19, 20, 21, 22, 23, 24, 28, 30, 33)
 
 # Encoding ----------------------------------------------------------------
 # 
 # factor_cols <- c("race", "employment_status")
-# training_set_features[factor_cols] <- lapply(training_set_features[factor_cols], as.factor)
+# x_train[factor_cols] <- lapply(x_train[factor_cols], as.factor)
 # 
-# training_set_features <- dummy_cols(training_set_features, 
-#                                     select_columns=factor_cols,
-#                                     remove_most_frequent_dummy = TRUE,
-#                                     remove_selected_columns = TRUE)
+# x_train <- dummy_cols(x_train, 
+#                       select_columns=factor_cols,
+#                       remove_most_frequent_dummy = TRUE,
+#                       remove_selected_columns = TRUE)
 
 
 # Clasificación -----------------------------------------------------------
 
 set.seed(123)
-shuffle = sample(nrow(training_set_features))
-training_set_features <- training_set_features[shuffle,]
-training_set_labels <- training_set_labels[shuffle,]
+shuffle = sample(nrow(x_train))
+
+x_train_h1n1 <- x_train_h1n1[shuffle,]
+x_train_seas <- x_train_seas[shuffle,]
+x_train_h1n1.label <- x_train.label[shuffle,1]
+x_train_seas.label <- x_train.label[shuffle,2]
+
 # 
-# normParam <- training_set_features %>% preProcess()
-# training_set_features.norm <- predict(normParam, training_set_features)
+# normParam <- x_train %>% preProcess()
+# x_train.norm <- predict(normParam, x_train)
+
+x_train.norm <- x_train
 
 n.folds = 5
 fold.labels <- rep(c(1:n.folds),
-                   each=nrow(training_set_features.norm)%/%n.folds,
-                   length.out=nrow(training_set_features.norm))
+                   each=nrow(x_train.norm)%/%n.folds,
+                   length.out=nrow(x_train.norm))
+
 
 # CV ----------------------------------------------------------------------
 
-k.list <- seq(5,155,by=5)
 metric = 'hamming'
+k.list <- seq(5,175,by=5)
 s = 1
 
 dist_mat.h1n1.prev.list <- list(0)
@@ -119,23 +130,17 @@ AUC.seas = list()
 acc.seas = list()
 
 for (i in c(1:n.folds)){
-# for (i in c(1:1)){
-  train.new <- training_set_features.norm[fold.labels>i,]
-  test <- training_set_features.norm[fold.labels==i,]
-
-  # train.new.h1n1 <- train.new %>% select(!contains('seas'))
-  # test.h1n1 <- test %>% select(!contains('seas'))
-  train.new.h1n1 <- train.new
-  test.h1n1 <- test
-  train.h1n1.label <- training_set_labels$h1n1_vaccine[fold.labels!=i]
-  test.h1n1.label <- training_set_labels$h1n1_vaccine[fold.labels==i]
-
-  # train.new.seas <- train.new %>% select(-'doctor_recc_h1n1') %>% select(!contains('opinion_h1n1'))
-  # test.seas <- test %>% select(-'doctor_recc_h1n1') %>% select(!contains('opinion_h1n1'))
-  train.new.seas <- train.new %>% select(-'child_under_6_months')
-  test.seas <- test %>% select(-'child_under_6_months')
-  train.seas.label <- training_set_labels$seasonal_vaccine[fold.labels!=i]
-  test.seas.label <- training_set_labels$seasonal_vaccine[fold.labels==i]
+  train.new.h1n1 <- x_train_h1n1[fold.labels>i,]
+  train.new.seas <- x_train_seas[fold.labels>i,]
+  
+  train.h1n1.label <- x_train_h1n1.label[fold.labels!=i]
+  train.seas.label <- x_train_seas.label[fold.labels!=i]
+  
+  test.h1n1 <- x_train_h1n1[fold.labels==i,]
+  test.seas <- x_train_seas[fold.labels==i,]
+  
+  test.h1n1.label <- x_train_h1n1.label[fold.labels==i]
+  test.seas.label <- x_train_seas.label[fold.labels==i]
 
   # H1N1
   n = nrow(test.h1n1)
@@ -179,9 +184,6 @@ for (i in c(1:n.folds)){
   }
 
   AUC.h1n1[[i]] <- apply(prob.h1n1[[i]], 2, function(x) auc(response=test.h1n1.label, predictor=x))
-
-  pred <- apply(prob.h1n1[[i]], 2, function(x) ifelse(x>=0.5, 1, 0))
-  acc.h1n1[[i]] <- apply(pred, 2, function(x) sum(x==test.h1n1.label)/length(test.h1n1.label))
   print(paste('Fold',i,'- h1n1: Completado'))
 
   # SEAS
@@ -223,9 +225,6 @@ for (i in c(1:n.folds)){
   }
 
   AUC.seas[[i]] <- apply(prob.seas[[i]], 2, function(x) auc(response=test.seas.label, predictor=x))
-
-  pred <- apply(prob.seas[[i]], 2, function(x) ifelse(x>=0.5, 1, 0))
-  acc.seas[[i]] <- apply(pred, 2, function(x) sum(x==test.seas.label)/length(test.seas.label))
   print(paste('Fold',i,'- seas: Completado'))
 }
 
