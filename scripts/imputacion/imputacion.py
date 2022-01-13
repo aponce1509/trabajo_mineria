@@ -49,6 +49,22 @@ def median_imputation(PATH, col_names_rm, output_path=""):
 
     PATH_SALIDA = "data/x_imputed_median_"  + output_path + ".csv" 
     x_train_imputed.to_csv(PATH_SALIDA)
+def mode_imputation(PATH, col_names_rm, output_path=""):
+    x_train = pd.read_csv(PATH, dtype='category')
+    x_train = x_train.drop("respondent_id", axis=1)
+    x_train = x_train.drop(col_names_rm, axis=1)
+    x_train_aux = cat_to_numbers_all(x_train)
+    # Imputación
+    imputer = SimpleImputer(strategy='most_frequent')
+    x_train_imputed = imputer.fit_transform(x_train_aux)
+    x_train_imputed = pd.DataFrame(
+        x_train_imputed,
+        # np.round(x_train_imputed),
+        columns=x_train.columns.values
+    )
+
+    PATH_SALIDA = "data/x_imputed_median_"  + output_path + ".csv" 
+    x_train_imputed.to_csv(PATH_SALIDA)
 if __name__ == "__main__":
     # # Random Forest
     # print("RF imputation")
