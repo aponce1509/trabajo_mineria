@@ -14,7 +14,7 @@ my_naive_bayes <- function(x_train, y_train, x_test, lapace_value) {
         classProbs = TRUE,
         summaryFunction = twoClassSummary
     )
-    model <- train(
+    model <- caret::train(
         x_train,
         y_train,
         "nb",
@@ -41,7 +41,12 @@ bagging_partition <- function(
     col_index_mat <- matrix(rep(col_index, n_bags), ncol = n_col, byrow = T)
     n_rows_bag <- as.integer(p * n_row)
     bag_rows <- apply(row_index_mat, 1, sample, n_rows_bag, TRUE)
-    bag_col <- apply(col_index_mat, 1, sample, n_features_bag, FALSE)
+    if (n_features_bag == 1) {
+        bag_col <- apply(col_index_mat, 1, sample, n_features_bag, FALSE) %>%
+            as.matrix() %>% t()
+    } else {
+       bag_col <- apply(col_index_mat, 1, sample, n_features_bag, FALSE)
+    }
     list(bag_rows, bag_col)
 }
 
@@ -78,9 +83,9 @@ ensemble <- function(
     for (i in seq(1, n_bags)) {
         row_index <- bag_rows[, i]
         col_index <- bag_col[, i]
-        x_train_bag <- x_train_tr[row_index, col_index]
+        x_train_bag <- x_train_tr[row_index, col_index] %>% as.data.frame()
         y_train_bag <- y_train_tr[row_index]
-        x_train_tst_bag <- x_train_tst[, col_index]
+        x_train_tst_bag <- x_train_tst[, col_index] %>% as.data.frame()
         probs <- my_naive_bayes(
             x_train_bag,
             y_train_bag,
@@ -156,7 +161,7 @@ dos_clasificadores_ensemble <- function(
         h1n1_vaccine = prob_h1n1,
         seasonal_vaccine = prob_seasonal
     )
-    colnames(df) <- c("respondent_id", "h1n1_vaccine", "seasonal_vaccine")
+    colnames(df) <- c("respondent_id", "h1n1_vaccine", "se  asonal_vaccine")
     path <- paste(
         "scripts/naive/Experimentos/exp_",
         n_exp, "/",
@@ -167,10 +172,4 @@ dos_clasificadores_ensemble <- function(
     }
 }
 
-dos_clasificadores_ensemble(8, 1, 50, 2, p = 0.1, use_test = TRUE)
-n_exp = 5
-lapace_value = 10
-n_bags = 10
-n_features_bag = 2
-seed = 123
-p = 0.1
+dos_clasificadores_ensemble(9, 1, 50, 3, p = 0.5, use_test = TRUE)

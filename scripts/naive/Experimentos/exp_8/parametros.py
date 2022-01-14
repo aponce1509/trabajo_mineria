@@ -5,15 +5,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from prepro_py import preprocesamiento_naive
 PAHT_OUTPUT = "scripts/naive/Experimentos/exp_8"
 
-# en verde varias iteraciones. Quitando variables correlacionadas (igual que el 3)
-# Añadimos algunas más que traten la NA como categoria algunas que tienen mucha
-# correlacion
-# SALTAN MUCHOS WARNINGS
+# Imputación usando en todas NA como catategoría nos quedamos con
+# las mejores columnas dadas por sfs
+
+
 file = __file__
-features_keep = ["respondent_id", 'behavioral_antiviral_meds', 'behavioral_face_mask',
-       'doctor_recc_h1n1', 'health_insurance',
-       'opinion_h1n1_vacc_effective', 'opinion_h1n1_risk', 'age_group',
-       'race', 'hhs_geo_region', 'census_msa', 'household_adults',
+features_keep = ["respondent_id", 'behavioral_antiviral_meds', 'doctor_recc_h1n1',
+       'health_insurance', 'opinion_h1n1_vacc_effective',
+       'opinion_h1n1_risk', 'age_group', 'race', 'hhs_geo_region',
        'employment_industry']
 features_drop = None
 features_keep_sea = ["respondent_id", 'h1n1_knowledge', 'doctor_recc_seasonal', 'health_insurance',
@@ -26,7 +25,7 @@ features_drop_ml = None
 
 # Dos clasificadores
 features_NA_as_cat = "all"
-imputation_method = "median"
+imputation_method = "mode"
 n_estimators = 10
 criterion = "gini"
 feature_selection = False
@@ -36,6 +35,7 @@ return_something = False
 sc_max_depth = 5
 print_cor = True
 value = "miss"
+sampling = None
 if __name__ == "__main__":
     # H1N1 
     y_data_style = "h1n1"
@@ -55,7 +55,8 @@ if __name__ == "__main__":
         return_something=return_something,
         sc_max_depth=sc_max_depth,
         print_cor=print_cor,
-        value=1000
+        value=value,
+        sampling=sampling
     )
     # seasonal
     y_data_style = "seasonal"
@@ -75,7 +76,8 @@ if __name__ == "__main__":
         return_something=return_something,
         sc_max_depth=sc_max_depth,
         print_cor=print_cor,
-        value=1000
+        value=value,
+        sampling=sampling
     )
     # ml
     # print("multi_label")

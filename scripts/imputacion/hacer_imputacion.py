@@ -3,21 +3,38 @@ from encode import *
 from imputation import *
 from os.path import join
 
+# En este archivo se define la función que hace la imputación y cuyos
+# parametros te permiten ajustar como quieres hacer la imputación
+# Aquí se puede ejecutar este script para realizar la imputación
+
 def encode_imputacion(
     PAHT_OUTPUT,
     features_keep=None, features_drop=None,
-    features_NA_as_cat=None, imputation_method="median", constant_value="-1",
-    n_estimators=10, criterion="gini", file_name=""
-):
-    # Leemos
+    features_NA_as_cat=None, imputation_method="mode", constant_value="-1",
+    n_estimators=10, criterion="gini", file_name=""):
+    """
+    Función para hacer la imputación total.
+
+    PAHT_OUTPUT: Ruta de salida. Solo la carpeta.
+    features_keep: Lista con las variables que nos quedamos. None si nos 
+    quedamos con todas
+    features_drop: Lista con las variables que quitamos. None si no 
+    quitamos ninguna
+    imputation_method: Método con el que se quiere imputar. "mode", "median"
+    "rf"
+    features_NA_as_cat: Lista con las variables a imputar de este métodos.
+    Si "all" considera todas las variables.
+    constant_value: valor con el que se imputa.
+    n_estimators: Número de arboles del RandomForest
+    Criterion: Criterio del RandomForest
+    file_name: str con la parte final del csv NO PONER .csv
+    """
+    # Leemos los datos de train y test
     x_train, y_train = data_read_train(features_keep, features_drop)
     test = data_read_test(features_keep, features_drop)
     # Encode
     x_train = ordinal_encoder(x_train)
-    print(x_train.household_children.median())
     test = ordinal_encoder(test)
-    x_train_no_imputed = x_train
-    test_no_imputed = test
     # Imputation
     if not features_NA_as_cat == None:
         x_train = constant_imputation(x_train, features_NA_as_cat, constant_value)

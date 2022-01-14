@@ -4,7 +4,9 @@ library(klaR)
 library(tidyverse)
 
 read_data <- function(n_exp, y_data_style) {
-
+    # leemos los datos de train y test y los guardamos un una lista
+    # sobre la que trabajan el resto de funciones.
+    # y_data_style es si es h1n1, seasonal, o multietiqueta
     path <- paste(
         "scripts/naive/Experimentos/exp_",
         n_exp, "/",
@@ -25,10 +27,14 @@ read_data <- function(n_exp, y_data_style) {
     }
 # c("no_no", "no_yes", "yes_yes", "yes_no")
 clasificacion <- function(data_list, lapace_value) {
+    # Dado el data_list hace la clasificación y obtiene las probabilidades
+    # del conjunto de test final.
     data <- data_list[[1]]
+    # separamos la var de salida
     y_data <- data[, ncol(data)] %>%
       factor(labels = c("no", "yes"))
     x_data <- data[, -ncol(data)]
+    # quitamos los identificadores
     x_data <- x_data[, -1]
     x_data <- lapply(x_data, factor) %>% as.data.frame()
     test <- data_list[[2]]
@@ -43,7 +49,8 @@ clasificacion <- function(data_list, lapace_value) {
         summaryFunction = twoClassSummary
     )
     print("Entrenando:")
-    model <- train(
+    # usando como medida la ROC y naivebayes
+    model <- caret::train(
         x_data,
         y_data,
         "nb",
@@ -61,6 +68,8 @@ clasificacion <- function(data_list, lapace_value) {
     list(model, test_ids, probs, features)
 }
 dos_clasificadores <- function(n_exp, lapace_value) {
+    # junta los resultados de hacer clasificacion sobre h1n1 y sobre
+    # seasonal
     # Dos clasificadores
     set.seed(123)
     print("h1n1:")
@@ -80,6 +89,7 @@ dos_clasificadores <- function(n_exp, lapace_value) {
     test_ids <- cls[[2]]
     prob_seasonal <- cls[[3]][2]
     colnames(prob_seasonal) <- "seasonal_vaccine"
+    features <- cls[[4]]
     print(features)
     print(model$results$ROC)
 
@@ -99,6 +109,7 @@ dos_clasificadores <- function(n_exp, lapace_value) {
 
 
 ml_classifier <- function(data_list, lapace_value) {
+    # Hace la clasificación usando 4 etiquetas posibles y no dos clasificadores
     data <- data_list[[1]]
     y_data <- data[, ncol(data)] %>%
       factor(labels = c("no_no", "no_yes", "yes_yes", "yes_no"))
@@ -117,7 +128,7 @@ ml_classifier <- function(data_list, lapace_value) {
         # summaryFunction = twoClassSummary
     )
     print("Entrenando:")
-    model <- train(
+    model <- caret::train(
         x_data,
         y_data,
         "nb",

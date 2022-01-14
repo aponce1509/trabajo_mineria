@@ -1,3 +1,4 @@
+# %%
 import pandas as pd
 import numpy as np
 from pandas.core.frame import DataFrame
@@ -103,23 +104,7 @@ def ordinal_encoder(data):
     if is_repondent:
         data = pd.concat([respondent_id, data], axis=1)
     return data
+# %%
 
 if __name__ == "__main__":
-    # x_data = pd.read_csv(
-    #     "data/training_set_features.csv",
-    #     dtype='category'
-    # )
-    # x_data.drop(["respondent_id"], axis=1, inplace=True)
-    # features = x_data.columns.values
-    # y_data = pd.read_csv(
-    #     "data/training_set_labels.csv",
-    #     dtype='category'
-    # )
-    # # df = pd.concat([df, labels], axis=1)
-    # # print(x_data.head())
-    # print(x_data["education"])
-    # x_data = ordinal_encoder(x_data)
-    # print(x_data["education"])
-    # keep_ = ["h1n1_concern", "age_group", "sex"]
-    drop_ = ["sex"]
-    print(data_read_train())
+    x_data, y_data, x_data_0 = data_read_train()
