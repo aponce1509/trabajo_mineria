@@ -1,14 +1,23 @@
-Bagging implementado por Ale:
+# Para correr un experimento
 
-Os comento un poco lo he hecho de forma si no he entendido mal la idea 
-con estas funciones solo teneis que cambiar unas pocas cosas para que funcionen los vuestros.
+Todos los archivos estén escritos de forma que el working directory es la carpeta más externa (es decir la carpeta que tiene las carpetas scripts, data ...)
 
-Me baso en usar dos clasificadores es decir uno para h1n1 y otro para seasonal.
-Para el ensemble se usan 4 funciones:
+Los experimentos están definidos dentro de la carpeta Experimentos y cada experimento tiene que ser una carpeta con nombre exp_n siendo n cualquier número.Dentro hay 3 archivos de código y el resto son csv. 
 
-my_naive_bayes: esta función la debereis cambiar de forma que dado x_train, y_train y x_test vuestro clasificador os de las probabilidades de si y no. le teneis que poner todos los argumentos que necesite vuestro clasificador.
+Los tres archivos son parametros.py, sec_car.ipynb y clasificacion.R. El experimento con mejor resultado en drivendata es el exp_9 y para ejecutarlo simplemente hay que primero ejecutar parametros.py que hace todo el preprocesamiento y guarda los datos en archivos para que sean leidos en R.
+Y finalmente ejecutar clasificacion.R para hacer la clasificación. Para el ensemble ejecutar el archivo ensemble.R. La función esta definida al final y su primer parámetro es el experimento.
 
-La funcion bagging_partition lo que hace es crear las distintas muestras que es lo que se basa el baggin, en mi caso tambien escogo aleatoriamente algunas columnas. Creo que random forest tambien hace eso pero no se si en knn por ejemplo tiene sentido cambiadlo si lo veis necesario. Me imagino que si poneis n_features_bag como el número de columnas del conjunto de datos lo que hara es simplemente mezclarlas. Los demas parametros es n_bag es el numero de muestras tomadas, "bag" (es igual al número de clasificadores que se harán al final), n_row y n_col son el número de filas y columnas del conjunto de entrenamiento. p es simplemente la porcion de datos que se cogen en cada "bag".
+De los experimentos el que está más comentado es el exp_9.
 
-La funcion ensemble parte de un tipo especial de lista donde guardo los datos de entrenamiento si quereis mirad la funcion read_data que esta en el archivo class_R_function.R pero si no os quereis complicar cambiarlo de forma que tengas x_train y_train y x_test para seosonal o para h1n1 (y_train es un vector no una matriz)
+# Descripción
+
+La idea de este código es que para realizar un experimento solo hay que crear una carpeta nueva (copia de una anterior) y modificar los parametros de una función para cambiar todos los aspectos de preprocesamiento que se realiza todo en python.
+
+Para el preprocesamiento hay 4 archivos. imputation.py recoge las funciones para imputacion, encode.py las de la codificación, sel_carac.py tiene funciones para hacer boruta y para ver la relacion entre variables categóricas. Finalmente tenemos prepro_py.py que define una función para hacer el preprocesamiento de los datos para h1n1, seasonal o si queremos considerar multi-etiqueta mejor que dos clasificadores. Además en esta función se han definido modificaciones sobre las variables como pueden ser añadir una columna nueva o hacer reducción de instancias.
+
+Para hacer la selección de caracteristicas selectiva hay que irse hay notebook de Jupyter donde una vez definido el experimento se ve las variables buenas. Para luego quitarlas si se considera necesario.
+
+La idea de esto es que si ahora se quiere probar distintas cosas solo hay que modificar los parametros de la función y además como lo guardo todo en distintas carpetas tenemos una especie de control de los cambios que vamos realizando.
+
+Mantenemos esta filosofía para hacer la clasificación y definimos un archivo, ahora en R, class_R_function.R donde se definen todas las funciones necesarias para la clasificación y acabamos con dos funciones importantes una que hace la clasificación usando los dos clasificadores y otra que hace la clasificación multietiqueta. Para hace el ensemble es algo distinto pero simple también. Para ello lo único que hay que hacer es abrir el archivo ensemble.R, que esta dentro de la carpeta naive, En este archivo se define el bagging para NaiveBayes y al final está la función que realiza el bagging. Lo unico que hay que hacer es elegir el experimento sobre el cual se quiere hacer el bagging, introduciendo como primer argumento de la función el número del experimento.
 

@@ -5,11 +5,10 @@ import numpy as np
 from encode import *
 from imputation import *
 from sel_carac import *
-
 def preprocesamiento_naive(
     PAHT_OUTPUT,
     features_keep=None, features_drop=None, y_data_style="h1n1",
-    features_NA_as_cat=None, imputation_method="median",
+    features_NA_as_cat=None, imputation_method="mode",
     n_estimators=10, criterion="gini",
     feature_selection: bool=True,
     seek_correlation=None,
@@ -18,8 +17,13 @@ def preprocesamiento_naive(
     sc_max_depth=5,
     print_cor=False,
     muchos_NA_var=None,
-    value="miss"
-):
+    value="miss",
+    sampling=0.5,
+    seed=123):
+    """
+    Hace el preprocesamiento de los datos ya sea para h1n1, seasonal o si 
+    queremos considerar multietiquta
+    """
     # Leemos
     x_train, y_train, x_train_0 = data_read_train(
         features_keep, features_drop, y_data_style)
@@ -27,19 +31,25 @@ def preprocesamiento_naive(
     # Encode
     x_train = ordinal_encoder(x_train)
     test = ordinal_encoder(test)
+    if not sampling == None:
+        x_train = x_train.sample(random_state=seed, frac=sampling, axis=0)
+        y_train = y_train.sample(random_state=seed, frac=sampling)
+        y_train.index = range(0, len(y_train))
 
     # Imputation
     if not features_NA_as_cat == None:
         x_train = constant_imputation(x_train, features_NA_as_cat, value)
         test = constant_imputation(test, features_NA_as_cat, value)
-    if imputation_method == "median" and features_NA_as_cat != "all":
-        x_train = median_imputation(x_train, features_NA_as_cat, value)
-        test = median_imputation(test, features_NA_as_cat, value)
+    if imputation_method == "median":
+        x_train = median_imputation(x_train)
+        test = median_imputation(test)
     elif imputation_method == "rf":
         x_train = rf_imputation(x_train, n_estimators, criterion)
         test = rf_imputation(test, n_estimators, criterion)
-    elif imputation_method == "knn":
-        raise Exception("WIP, Venga más tarde aun no knn")
+    elif imputation_method == "mode":
+        x_train = mode_imputation(x_train)
+        test = mode_imputation(test)
+        
     # Nuevas variables
     if not muchos_NA_var == None:
         na_count = x_train_0.isna().T.sum()

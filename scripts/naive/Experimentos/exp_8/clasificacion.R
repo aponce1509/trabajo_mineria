@@ -7,22 +7,15 @@ n_exp <- 8
 # Clasificacion
 dos_clasificadores(n_exp, lapace_value)
 
-# No pasado por Driven
-# Descripción del exp:
-# Experimento 3:
-# imputacion con mediana, consideradon como Na como categoria en 
-# ["employment_industry", "employment_occupation"] y la de los seguros
-# uso boruta para quitar variables me quedo con las que están en azul o 
-# en verde varias iteraciones. Quitando variables correlacionadas
-# SALTAN MUCHOS WARNINGS
-
-# LAPLACE USADO 10
-# 7
-# 0.8365885
-# 0.8388368
-# 5
-# 0.8356938
-# 0.8391242
-# 4
-#
-# 
+###### MEJOR DE DRIVEN Con 12 (0.8416)
+# 0.8485 (12) - 0.8488 (9)
+# 0.8492
+# ENSEMBLE n_features_bag == 1
+# 0.8445 (12) - 0.8613 (9)
+# 0.8374
+###### ENSEMBLE Driven con 12 (0.8343) n_features_bag == 2
+# 0.8534 (12) - 0.862 (9)
+# 0.844
+###### ENSEMBLE n_features_bag == 3
+# 0.8497 (12) - 0.8625 (9)
+# 0.8395

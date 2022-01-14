@@ -4,6 +4,8 @@ import pandas as pd
 from boruta import BorutaPy
 from sklearn.ensemble import RandomForestRegressor
 
+# aquí se tienen por un lado una función para obtener la matriz de correlación
+# entre categoricos y una función que hace boruta.
 
 # https://www.kaggle.com/chrisbss1/cramer-s-v-correlation-matrix
 def cramers_V(var1, var2) :
@@ -47,6 +49,9 @@ def cramer_V_mat(data, y_data, threshold=0.3):
   return df, correlations
 
 def boruta(x_data, y_data, sc_max_depth=5):
+  """
+  Ejecuta el algoritmo de boruta para ver las variables relevantes
+  """
   features = x_data.columns.values
   if "respondent_id" in features:
     x_data = x_data.drop("respondent_id", axis=1)
