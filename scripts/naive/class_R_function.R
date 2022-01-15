@@ -112,7 +112,7 @@ ml_classifier <- function(data_list, lapace_value) {
     # Hace la clasificación usando 4 etiquetas posibles y no dos clasificadores
     data <- data_list[[1]]
     y_data <- data[, ncol(data)] %>%
-      factor(labels = c("no_no", "no_yes", "yes_yes", "yes_no"))
+      factor(labels = c("a", "b", "c", "d"))
     x_data <- data[, -ncol(data)]
     x_data <- x_data[, -1]
     x_data <- lapply(x_data, factor) %>% as.data.frame()
@@ -143,8 +143,8 @@ ml_classifier <- function(data_list, lapace_value) {
     print("Prediciendo:")
     features <- colnames(x_data)
     probs <- predict(model, test, type = "prob")
-    h1n1_yes <- probs[, 3] + probs[, 4]
-    sea_yes <- probs[, 2] + probs[, 3]
+    h1n1_yes <- probs[, 1] + probs[, 2]
+    sea_yes <- probs[, 1] + probs[, 3]
     probs <- data.frame(
         respondent_id = test_ids,
         h1n1_vaccine = h1n1_yes,

@@ -136,7 +136,6 @@ dos_clasificadores_ensemble <- function(
     set.seed(seed)
     print("h1n1:")
     h1n1_list <- read_data(n_exp, "h1n1")
-    data_list = h1n1_list
     list_aux <- ensemble(
         h1n1_list, lapace_value, n_bags, n_features_bag, seed, p, use_test
     )
@@ -172,4 +171,4 @@ dos_clasificadores_ensemble <- function(
     }
 }
 
-dos_clasificadores_ensemble(9, 1, 50, 3, p = 0.5, use_test = TRUE)
+dos_clasificadores_ensemble(9, 1, 50, 3, p = 1, use_test = TRUE)

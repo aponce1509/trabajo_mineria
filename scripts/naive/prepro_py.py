@@ -22,7 +22,37 @@ def preprocesamiento_naive(
     seed=123):
     """
     Hace el preprocesamiento de los datos ya sea para h1n1, seasonal o si 
-    queremos considerar multietiquta
+    queremos considerar multietiqueta.
+
+    features_keep: Lista con las variables que nos quedamos. None si nos 
+    quedamos con todas
+    features_drop: Lista con las variables que quitamos. None si no 
+    quitamos ninguna
+    y_data_style: es si es "h1n1", "seasonal", o multietiqueta "ml"
+    features_NA_as_cat: Lista con las variables a imputar de considerando 
+    los NA como su propia categoría. Si "all" considera todas las variables.
+    value: valor con el que se imputa si se considera como su propia cat.
+    imputation_method: Método con el que se quiere imputar. "mode", "median"
+    "rf"
+    n_estimators: Número de arboles del RandomForest para hacer la imputación
+    Criterion: Criterio del RandomForest para hacer la imputación
+    seek_correlation: Si None no se hace busqueda de relacion. Si no valor 
+    entre 0 y 1 que actua como treshold para ver si se considera o no 
+    correlacion
+    print_cor: Muestra las variables que salten que esten correladas
+    sampling: porcentaje del muestra final tras reducir el número 
+    de instancias de manera aleatoria
+    seed: semilla para los facotres aleatorios
+    feature_selection: Se hace selección de caracteristicas usando 
+    boruta o no.
+    sc_max_depth: profundidad máxima de los arboles usados por boruta
+    return_something: si se quiere que la función de vuelva algo y no solo 
+    cree el .csv
+    to_csv: si se quiere crear un .csv con el preprocesamiento realizado
+    muchos_NA_var: si None no hace nada. Valor entero tal que se crea una 
+    variable nueva que es 1 si dicha instancia tiene más NA que el valor
+    dado y será 0 en caso contrario
+
     """
     # Leemos
     x_train, y_train, x_train_0 = data_read_train(

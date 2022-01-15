@@ -40,14 +40,14 @@ def encode_imputacion(
         x_train = constant_imputation(x_train, features_NA_as_cat, constant_value)
         test = constant_imputation(test, features_NA_as_cat, constant_value)
     if imputation_method == "median":
-        x_train = median_imputation(x_train, features_NA_as_cat)
-        test = median_imputation(test, features_NA_as_cat)
+        x_train = median_imputation(x_train)
+        test = median_imputation(test)
     elif imputation_method == "rf":
         x_train = rf_imputation(x_train, n_estimators, criterion)
         test = rf_imputation(test, n_estimators, criterion)
     elif imputation_method == "mode":
-        x_train = mode_imputation(x_train, features_NA_as_cat)
-        test = mode_imputation(test, features_NA_as_cat)
+        x_train = mode_imputation(x_train)
+        test = mode_imputation(test)
     # Nuevas variables
     PATH = join(
         PAHT_OUTPUT,
@@ -62,8 +62,18 @@ def encode_imputacion(
     
 if __name__ == "__main__":
     print(getcwd())
-    PATH_OUTPUT = "scripts"
+    PATH_OUTPUT = "scripts/naive"
+    features_keep = ["respondent_id", 'h1n1_knowledge', 'doctor_recc_seasonal', 'health_worker',
+       'health_insurance', 'opinion_seas_vacc_effective',
+       'opinion_seas_risk', 'opinion_seas_sick_from_vacc', 'age_group',
+       'education', 'income_poverty', 'rent_or_own',
+       'employment_industry']
     features_drop = None
+    features_NA_as_cat = ["employment_occupation", "employment_industry",
+    "health_insurance"]
     encode_imputacion(
-        PATH_OUTPUT, features_NA_as_cat=None, imputation_method="rf", file_name=""
+        PATH_OUTPUT,
+        features_keep=features_keep,
+        imputation_method="mode",
+        file_name="_allknn_seasonal"
     )
