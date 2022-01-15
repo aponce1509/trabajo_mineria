@@ -1,6 +1,6 @@
 library(ggplot2)
 library(tidyverse)
-library(fitdistrplus)  # Ajuste de una distribución -> denscomp 
+library(fitdistrplus)  # Ajuste de una distribuci?n -> denscomp 
 library(reshape)   # melt
 library(ggbiplot)  # biplot
 library(outliers)  # Grubbs
@@ -21,7 +21,7 @@ df_test <- as.data.frame(read_csv('test_set_features.csv'))
 df_encoded = merge(datos,dat_lab)
 #df$respondent_id = NULL
 
-#antes de nada: hace falta pasarlo todo a factores y los NA quitarlos. Lo he puesto aquí aparte por si hiciese
+#antes de nada: hace falta pasarlo todo a factores y los NA quitarlos. Lo he puesto aqu? aparte por si hiciese
 # falta ajustar alguno en particular
 
 
@@ -35,7 +35,7 @@ df_encoded$education = factor(df$education, levels=c("< 12 Years", "12 Years", "
 df_encoded$age_group = factor(df$age_group, levels=c("18 - 34 Years","35 - 44 Years","45 - 54 Years","55 - 64 Years","65+ Years"), labels=c(1:5), ordered=TRUE)
 df_encoded$income_poverty = factor(df$income_poverty, levels=c("Below Poverty","<= $75,000, Above Poverty","> $75,000" ), labels=c(1:3), ordered=TRUE)
 
-#Estos no se muy bien que hacer, ya que las distancias SI importan... De momento se quedan así ya que parece funcionar....
+#Estos no estÃ¡ muy bien, ya que las distancias SI importan...
 
 label_encoding = function(x){factor(x, labels=c(1:length(unique(na.omit(x)))))}
 
@@ -73,8 +73,7 @@ df_test = df_test %>% mutate_if(is.factor,as.numeric)
 str(df_test)
 
 
-
-# Por si interesa ver el boxplot de algunos de los atributos, lo dejo aquí. 
+# Por si interesa ver el boxplot de algunos de los atributos, lo dejo aqui. 
 # El propio boxplor marca outliers, ojo que son univariantes y sirve de poco
 
 boxplot(df_encoded[,c(1:22)])
@@ -116,12 +115,12 @@ if (condition) {
   
 }
 
-set_train_limpio_LOF <- set_train[(lista == 0),] #estos eguro que se puede simplificar pero bueno, si funciona no lo arregles
+set_train_limpio_LOF <- set_train[(lista),] #estos seguro que se puede simplificar pero bueno, si funciona no lo arregles
 
 write_csv(set_train_limpio_LOF, "train_sin_outliers_LOF.csv")
 
 
-#igual pero para el test (ojo cuidado que habría que sustituir los NA por algo NO CARGARSELOS que si no no funciona luego el predict obviamente)
+#igual pero para el test (ojo cuidado que habr?a que sustituir los NA por algo NO CARGARSELOS que si no no funciona luego el predict obviamente)
 
 set_test = drop_na(df_test_encoded)
 str(set_test)
@@ -155,7 +154,7 @@ sklearn.neighbors.LocalOutlierFactor(n_neighbors=20, *, algorithm='auto',
 
 
 
-# Otro paquete que he visto que elimina el ruido (respecto a las variables de salida) podría
+# Otro paquete que he visto que elimina el ruido (respecto a las variables de salida) podr?a
 # ser interesante ya que es relativamente facil de implementar y parece tener buenas reviews xD
 
 # ojo que parece que si o si tienen que ser factors
@@ -172,7 +171,7 @@ ruidos_seasonal = NoiseFiltersR::IPF(seasonal_vaccine ~ ., data=df_encoded)
 df_seasonal_ruido = ruidos_seasonal$cleanData
 str(df_seasonal)
 
-## Método alternativo de la misma librería a mi me da mejor resultado porque se carga bastantes menos
+## M?todo alternativo de la misma librer?a a mi me da mejor resultado porque se carga bastantes menos
 # y creo que eso para mi arbol es importante pero es probarlo vamos
 ruidos_h1n1 = edgeBoostFilter(h1n1_vaccine ~ ., data=df_encoded)
 ruidos_seasonal = edgeBoostFilter(seasonal_vaccine ~ ., data=df_encoded)
@@ -181,7 +180,7 @@ ruidos_seasonal = edgeBoostFilter(seasonal_vaccine ~ ., data=df_encoded)
 
 
 #Esto por si se quiere exportar a un csv y luego meterlo en vuestro clasificador, si no... se puede copiar
-# el cachito de código de arriba y hasta es mas facil.
+# el cachito de c?digo de arriba y hasta es mas facil.
 
 write_csv(df_h1n1, "train_ruido_h1n1.csv")
 write_csv(df_seasonal, "train_ruido_seasonal.csv")
@@ -191,7 +190,7 @@ write_csv(df_seasonal, "train_ruido_seasonal.csv")
 
 
 
-# DETECCIÖN MEDIANTE COOKS DISTANCE
+# DETECCI?N MEDIANTE COOKS DISTANCE
 
 set_train = df_encoded
 
@@ -240,7 +239,7 @@ library(CerioliOutlierDetection)
 test.MVN = mvn(df_encoded[,c(2:3)], mvnTest = "energy")
 test.MVN$multivariateNormality["MVN"]
 
-#Sale que NO es una distribución normal obviamente. ASique descartamos a priori todos los test estadísticos para detectar outliers (poco potentes y si no tienen soporte?)
+#Sale que NO es una distribuci?n normal obviamente. ASique descartamos a priori todos los test estad?sticos para detectar outliers (poco potentes y si no tienen soporte?)
 
 set_train = df_encoded
 set_train = drop_na(set_train)
@@ -264,7 +263,7 @@ mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
 
 
 
-#Representación?¿
+#Representaci?n??
 
 clave.max.outlier.lof = claves.outliers.lof[1]
 
