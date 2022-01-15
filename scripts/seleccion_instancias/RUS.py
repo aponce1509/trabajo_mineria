@@ -64,10 +64,10 @@ index.rename(columns={0:'index'}, inplace=True)
 #%% Almacenamiento de resultados - Opcional
 
 path = 'data/'
-#estos nombres asumen que la imputacion fue mediante NA como categoría (impNAcat). En caso alternativo se puede sobreescribir.
-features_filename = path + 'training_set_features_impNAcat_rus_clean.csv' 
-labels_filename = path + 'training_set_labels_impNAcat_rus_clean.csv'
-index_filename = path + 'index_impNAcat_rus_clean.csv'
+#estos nombres asumen que un tipo de imputación específico. En caso alternativo se puede sobreescribir.
+features_filename = path + 'training_set_features_impmedian_rus_clean.csv' 
+labels_filename = path + 'training_set_labels_impmedian_rus_clean.csv'
+index_filename = path + 'index_impmedian_rus_clean.csv'
 
 training_set_red.to_csv(features_filename, index=False)
 training_set_labels_red.to_csv(labels_filename, index=False)
