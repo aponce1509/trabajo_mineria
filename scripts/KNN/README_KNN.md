@@ -10,6 +10,8 @@ El código para la validación cruzada y para la clasificación del test se encu
 
 La implementación del algoritmo kNN se ha realizado principalmente a mano, requiriendo el uso del paquete philentropy para el cálculo de algunas métricas de distancia y del paquete pROC para calcular la puntuación ROC-AUC.
 
+Además de estos tres archivos también se incluye SFS.py, que aplica el algoritmo Sequential Forward Selection de manera externa.
+
 Al comienzo de cada archivo se encuentra una breve descripción del funcionamiento de los mismos junto con un esquema del procedimiento que sigue. Para su funcionamiento es necesario que el directorio de trabajo (cwd) sea aquel que contiene las carpetas data y scripts.
 
 Archivos empleados en estos códigos:
