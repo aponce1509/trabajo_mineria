@@ -8,6 +8,13 @@
 # matriz de distancias, que es el paso más costoso computacionalmente. El resultado de
 # este código se recoge en la variable submission, que se puede guardar directamente
 # como csv para subirlo a DrivenData.
+#
+# Nota: En esta implementación de bagging no se ha incluido la posibilidad de probarlo
+# con técnicas de encoding o de normalización, y por tanto tampoco se han incluido los
+# métodos de imputación de NA que requieren los pasos anteriores. El motivo de esto es
+# que en el momento de realizar este código ya se dedujo que dichas técnicas no eran
+# necesarias para conseguir los mejores pipelines encontrados (incluido el ganador) y que
+# para incluirlos era necesario reestructurar el código significativamente.
 # 
 # Esquema del código:
 #     - Inicialización
@@ -36,9 +43,26 @@ library(pROC)
 source('data/data_0.R') #este fichero realiza la imputación tomando NA como categoría
 rm(x_train, x_test, y_train, y_test, x_data_na)
 
+
 ## Selección de instancias (aplicación externa)
 
-IS_index <- read_csv("data/index_impmedian_aknn_clean.csv") #este fichero contiene los índices seleccionados por AllKNN
+# Opción A: CNN (importación de datasets, usa imputación por RandomForest)
+# x_train <- read_csv('scripts/seleccion_instancias/training_set_features_cnn.csv')
+# x_train.label <- read_csv('scripts/seleccion_instancias/training_set_labels_cnn.csv')
+# colnames(x_train.label) <- 'vaccine'
+# x_train.label <- x_train.label %>% mutate(h1n1_vaccine=ifelse(vaccine %in% c(2,3),1,0),
+#                                           seasonal_vaccine=ifelse(vaccine %in% c(1,3),1,0),
+#                                           .keep='unused')
+
+# Opción B, C: AllKNN o RUS (importación de los índices seleccionados)
+
+#seleccionar una de las cinco siguientes líneas
+IS_index <- read_csv("data/index_impmedian_aknn_clean.csv") #AllKNN k=3
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn5_clean.csv") #AllKNN k=5
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn15_clean.csv") #AllKNN k=15
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn25_clean.csv") #AllKNN k=25
+# IS_index <- read_csv("data/index_impnacat_rus_clean.csv") #RUS
+
 x_train <- x_data[IS_index[[1]]+1,]
 x_train.label <- y_data[IS_index[[1]]+1,]
 rownames(x_train) <- seq(1,nrow(x_train))
@@ -46,14 +70,15 @@ rownames(x_train.label) <- seq(1,nrow(x_train))
 
 x_test <- x_true_test
 
+
 ## Detección de outliers
  
 # x_num <- read_csv("data/training_set_features_impmedian_aknn_clean.csv") #para LOF basado en distancia euclídea es necesario tener valores numéricos
 # x_num.norm <- as.data.frame(scale(x_num))
-# num.vecinos.lof = 5 
+# num.vecinos.lof = 5
 # lof.scores = LOF(x_num.norm, k = num.vecinos.lof)
 # 
-# plot(sort(lof.scores, decreasing=TRUE) ~ seq_along(lof.scores), 
+# plot(sort(lof.scores, decreasing=TRUE) ~ seq_along(lof.scores),
 #      xlab='Index', ylab='Puntuaciones LOF')
 # 
 # outliers = which(lof.scores > 1.4)
@@ -61,10 +86,33 @@ x_test <- x_true_test
 # x_train = x_train[-outliers,]
 # x_train.label = x_train.label[-outliers,]
 
+
 ## Selección de características
 
-#resultados de SFS
-fs_h1n1 <- c(2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32) 
+# Opción A: BORUTA (Implementación integrada)
+
+# x_train.boruta.h1n1 = data.frame(x_train,h1n1_vaccine=x_train.label[,1])
+# x_train.boruta.h1n1 = as.data.frame(lapply(x_train.boruta.h1n1,as.factor))
+# levels(x_train.boruta.h1n1$h1n1_vaccine) = c('No','Yes')
+# 
+# x_train.boruta.seas = data.frame(x_train,seasonal_vaccine=x_train.label[,2])
+# x_train.boruta.seas = as.data.frame(lapply(x_train.boruta.seas,as.factor))
+# levels(x_train.boruta.seas$seasonal_vaccine) = c('No','Yes')
+# 
+# set.seed(1)
+# var_Boruta_class1 = Boruta(h1n1_vaccine~.,data=x_train.boruta.h1n1,maxRuns=35,doTrace=1)
+# TentativeRoughFix(var_Boruta_class1)
+# 
+# set.seed(1)
+# var_Boruta_class2 = Boruta(seasonal_vaccine~.,data=x_train.boruta.seas,maxRuns=35,doTrace=1)
+# TentativeRoughFix(var_Boruta_class2)
+# 
+# fs_h1n1 <- which(var_Boruta_class1$finalDecision == 'Confirmed')
+# fs_seas <- which(var_Boruta_class2$finalDecision == 'Confirmed')
+
+# Opción B: SFS (Implementación externa - SFS.py)
+
+fs_h1n1 <- c(2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32)
 fs_seas <- c(2, 3, 5, 11, 12, 14, 15, 17, 19, 20, 21, 22, 23, 24, 28, 30, 33)
 
 # Bagging ------------------------------------------------------------------

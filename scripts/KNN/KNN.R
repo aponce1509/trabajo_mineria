@@ -28,7 +28,7 @@ library(tidyverse)
 library(caret)
 
 library(Boruta)
-# library(fastDummies)
+library(fastDummies)
 library(DDoutlier)
 
 library(philentropy)
@@ -39,31 +39,54 @@ library(pROC)
 
 ## Carga de datos e imputación de NA
 
-#Opcion 1
-# x_train <-
-#   read.csv("~/GitHub/trabajo_mineria/data/training_set_features_impmedian_aknn_clean.csv",
-#            stringsAsFactors=TRUE)
-# x_train.label <-
-#   read_csv("~/GitHub/trabajo_mineria/data/training_set_labels_impmedian_aknn_clean.csv")
+# Opción A, B, C: Imputación por RandomForest, mediana o moda (importación de dataset imputado)
 
-#Opcion 2
-source('data/data_0.R') #este fichero realiza la imputación tomando NA como categoría
+#seleccionar solo una de las tres siguientes líneas
+# # x_data <- read_csv('data/x_train_imputed_rf_true.csv') #RandomForest
+# x_data <- read_csv('data/x_train_imputed_median_true.csv') #Mediana
+# # x_data <- read_csv('data/x_train_imputed_mode_true.csv') #Moda
+# 
+# y_data <- read_csv('data/training_set_labels.csv')
+# x_data$respondent_id <- NULL
+# y_data$respondent_id <- NULL
+
+# Opción D: Imputación por NA como categoría
+source('data/data_0.R')
 rm(x_train, x_test, y_train, y_test, x_true_test, x_data_na)
 
+
 ## Selección de instancias
-IS_index <- read_csv("scripts/seleccion_instancias/AllKNN/index_impmedian_aknn5_clean.csv")
+
+# Opción A: CNN (importación de datasets, usa imputación por RandomForest)
+# x_train <- read_csv('scripts/seleccion_instancias/training_set_features_cnn.csv')
+# x_train.label <- read_csv('scripts/seleccion_instancias/training_set_labels_cnn.csv')
+# colnames(x_train.label) <- 'vaccine'
+# x_train.label <- x_train.label %>% mutate(h1n1_vaccine=ifelse(vaccine %in% c(2,3),1,0),
+#                                             seasonal_vaccine=ifelse(vaccine %in% c(1,3),1,0),
+#                                             .keep='unused')
+
+
+# Opción B, C: AllKNN o RUS (importación de los índices seleccionados)
+
+#seleccionar una de las cinco siguientes líneas
+IS_index <- read_csv("data/index_impmedian_aknn_clean.csv") #AllKNN k=3
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn5_clean.csv") #AllKNN k=5
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn15_clean.csv") #AllKNN k=15
+# IS_index <- read_csv("seleccion_instancias/AllKNN/index_impmedian_aknn25_clean.csv") #AllKNN k=25
+# IS_index <- read_csv("data/index_impnacat_rus_clean.csv") #RUS
 
 x_train <- x_data[IS_index[[1]]+1,]
 x_train.label <- y_data[IS_index[[1]]+1,]
 rownames(x_train) <- seq(1,nrow(x_train))
 rownames(x_train.label) <- seq(1,nrow(x_train))
 
+
 ## Detección de outliers
 
-# x_num <- read_csv("data/training_set_features_impmedian_aknn_clean.csv")
-# x_num.norm <- as.data.frame(scale(x_num))
+# x_train.num <- read_csv("data/training_set_features_impmedian_aknn_clean.csv")
+# x_train.num.norm <- as.data.frame(scale(x_train.num))
 # num.vecinos.lof = 5
-# lof.scores = LOF(x_num.norm, k = num.vecinos.lof)
+# lof.scores = LOF(x_train.num.norm, k = num.vecinos.lof)
 # 
 # plot(sort(lof.scores, decreasing=TRUE) ~ seq_along(lof.scores),
 #      xlab='Index', ylab='Puntuaciones LOF')
@@ -73,60 +96,64 @@ rownames(x_train.label) <- seq(1,nrow(x_train))
 # x_train = x_train[-outliers,]
 # x_train.label = x_train.label[-outliers,]
 
+
 ## Selección de características
 
-# train_c1 = data.frame(x_train,h1n1_vaccine=x_train.label[,1])
-# train_c1 = as.data.frame(lapply(train_c1,as.factor))
-# levels(train_c1$h1n1_vaccine) = c('No','Yes')
+# Opción A: BORUTA (Implementación integrada)
+
+# x_train.boruta.h1n1 = data.frame(x_train,h1n1_vaccine=x_train.label[,1])
+# x_train.boruta.h1n1 = as.data.frame(lapply(x_train.boruta.h1n1,as.factor))
+# levels(x_train.boruta.h1n1$h1n1_vaccine) = c('No','Yes')
 # 
-# train_c2 = data.frame(x_train,seasonal_vaccine=x_train.label[,2])
-# train_c2 = as.data.frame(lapply(train_c2,as.factor))
-# levels(train_c2$seasonal_vaccine) = c('No','Yes')
+# x_train.boruta.seas = data.frame(x_train,seasonal_vaccine=x_train.label[,2])
+# x_train.boruta.seas = as.data.frame(lapply(x_train.boruta.seas,as.factor))
+# levels(x_train.boruta.seas$seasonal_vaccine) = c('No','Yes')
 # 
 # set.seed(1)
-# var_Boruta_class1 = Boruta(h1n1_vaccine~.,data=train_c1,maxRuns=35,doTrace=1)
-# 
+# var_Boruta_class1 = Boruta(h1n1_vaccine~.,data=x_train.boruta.h1n1,maxRuns=35,doTrace=1)
 # TentativeRoughFix(var_Boruta_class1)
-# # Boruta performed 16 iterations in 3.821952 mins.
-# # 32 attributes confirmed important: age_group,
-# # behavioral_antiviral_meds, behavioral_avoidance,
-# # behavioral_face_mask, behavioral_large_gatherings and 27
-# # more;
-# # 1 attributes confirmed unimportant: census_msa;
+# 
 # set.seed(1)
-# var_Boruta_class2 = Boruta(seasonal_vaccine~.,data=train_c2,maxRuns=35,doTrace=1)
+# var_Boruta_class2 = Boruta(seasonal_vaccine~.,data=x_train.boruta.seas,maxRuns=35,doTrace=1)
 # TentativeRoughFix(var_Boruta_class2)
-# # Boruta performed 34 iterations in 7.703804 mins.
-# # Tentatives roughfixed over the last 34 iterations.
-# # 31 attributes confirmed important: age_group,
-# # behavioral_antiviral_meds, behavioral_avoidance,
-# # behavioral_face_mask, behavioral_large_gatherings and 26 more;
-# # 2 attributes confirmed unimportant: census_msa,
-# # child_under_6_months;
+# 
+# fs_h1n1 <- which(var_Boruta_class1$finalDecision == 'Confirmed')
+# fs_seas <- which(var_Boruta_class2$finalDecision == 'Confirmed')
 
-# SFS
+# Opción B: SFS (Implementación externa - SFS.py)
 
-fs_h1n1 <- c(2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32) 
+fs_h1n1 <- c(2, 3, 4, 5, 10, 14, 15, 16, 17, 20, 22, 24, 25, 28, 30, 32)
 fs_seas <- c(2, 3, 5, 11, 12, 14, 15, 17, 19, 20, 21, 22, 23, 24, 28, 30, 33)
+
 
 x_train_h1n1 <- x_train %>% select(all_of(fs_h1n1))
 x_train_seas <- x_train %>% select(all_of(fs_seas))
 
-## Encoding
-# 
-# factor_cols <- c("race", "employment_status")
-# x_train[factor_cols] <- lapply(x_train[factor_cols], as.factor)
-# 
-# x_train <- dummy_cols(x_train, 
-#                       select_columns=factor_cols,
-#                       remove_most_frequent_dummy = TRUE,
-#                       remove_selected_columns = TRUE)
 
-## Normalización y otros
+## Encoding
+
+# factor_cols <- c("race", "employment_status")
+# 
+# x_train_h1n1[factor_cols] <- lapply(select(x_train_h1n1,contains(factor_cols)), as.factor)
+# x_train_seas[factor_cols] <- lapply(select(x_train_seas,contains(factor_cols)), as.factor)
+# 
+# x_train_h1n1 <- dummy_cols(x_train_h1n1,
+#                       select_columns=factor_cols,
+#                       remove_most_frequent_dummy = FALSE,
+#                       remove_selected_columns = TRUE)
+# x_train_seas <- dummy_cols(x_train_seas,
+#                            select_columns=factor_cols,
+#                            remove_most_frequent_dummy = FALSE,
+#                            remove_selected_columns = TRUE)
+
+## Otros
 
 #normalización
-# normParam <- x_train %>% preProcess()
-# x_train <- predict(normParam, x_train)
+# normParam_h1n1 <- x_train_h1n1 %>% preProcess()
+# x_train_h1n1 <- predict(normParam_h1n1, x_train_h1n1)
+# 
+# normParam_seas <- x_train_seas %>% preProcess()
+# x_train_seas <- predict(normParam_seas, x_train_seas)
 
 #se barajan las filas del conjunto de entrenamiento por si originalmente tenía algún orden
 set.seed(123)
@@ -134,8 +161,8 @@ shuffle = sample(nrow(x_train))
 
 x_train_h1n1 <- x_train_h1n1[shuffle,]
 x_train_seas <- x_train_seas[shuffle,]
-x_train_h1n1.label <- x_train.label[shuffle,1]
-x_train_seas.label <- x_train.label[shuffle,2]
+x_train_h1n1.label <- x_train.label[shuffle,][[1]]
+x_train_seas.label <- x_train.label[shuffle,][[2]]
 
 #asignación de cada instancia a una partición de la validación cruzada
 n.folds = 5
@@ -146,9 +173,10 @@ fold.labels <- rep(c(1:n.folds),
 # Validación cruzada ------------------------------------------------------
 
 # Parámetros del clasificador
-metric = 'hamming'
+metric = 'hamming'  #otras opciones son 'cosine' y 'jaccard'
 k.list <- seq(5,300,by=5)
-s = 1
+s = 1  #para estimar este parámetro se puede realizar el mismo procedimiento que k. En este código
+       #se omite esto por claridad y porque se ha comprobado que no aporta ninguna mejora.
 
 dist_mat.h1n1.prev.list <- list(0)
 prob.h1n1 = list()
