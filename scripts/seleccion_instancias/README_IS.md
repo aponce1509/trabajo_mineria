@@ -10,6 +10,8 @@ Los tres códigos se han implementado en Python aprovechando el paquete imbalanc
 
 Al comienzo de cada código se describe brevemente el código y el esquema que sigue. Todos están divididos en secciones y contienen un bloque final comentado que se puede descomentar para guardar los resultados. Para su funcionamiento se asume que el directorio de trabajo (cwd) inicial es esta carpeta (internamente pasa de esta carpeta a la carpeta principal que contiene las carpetas data y scripts).
 
+Esta carpeta contiene una subcarpeta con los datasets resultantes del algoritmo AllKNN con diferentes valores de k (el que se encuentra en la carpeta data es con k=3).
+
 Archivos empleados en estos códigos:
 
 * data/x_train_imputed_median_true.csv
